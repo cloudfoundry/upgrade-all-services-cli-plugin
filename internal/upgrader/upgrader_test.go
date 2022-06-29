@@ -10,6 +10,7 @@ import (
 
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 	"upgrade-all-services-cli-plugin/internal/upgrader/upgraderfakes"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"upgrade-all-services-cli-plugin/internal/workers"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

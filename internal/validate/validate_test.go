@@ -6,8 +6,9 @@ import (
 
 	"upgrade-all-services-cli-plugin/internal/validate"
 
-	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"upgrade-all-services-cli-plugin/internal/command"
+
+	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
