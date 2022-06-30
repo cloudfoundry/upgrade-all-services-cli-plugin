@@ -8,6 +8,8 @@ builds:
   - darwin
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  format: binary
+  wrap_in_directory: false
   files:
   - none*
 changelog:
