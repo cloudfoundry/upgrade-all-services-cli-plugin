@@ -31,8 +31,8 @@ func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 			Build: 0,
 		},
 		MinCliVersion: plugin.VersionType{
-			Major: 7,
-			Minor: 0,
+			Major: 6,
+			Minor: 53,
 			Build: 0,
 		},
 		Commands: []plugin.Command{
