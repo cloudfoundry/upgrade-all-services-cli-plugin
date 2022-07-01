@@ -1,4 +1,4 @@
-## upgrade-all-service-instances (cf cli plugin)
+## upgrade-all-services (cf cli plugin)
 
 A CF-CLI plugin for upgrading all service instances in a CF foundation.
 
@@ -20,8 +20,8 @@ cf install-plugin <path_to_plugin_binary>
 ### Usage
 
 ```
-cf upgrade-all-service-instances <broker_name>
+cf upgrade-all-services <broker_name>
 
 Options:
-    -batch-size int "number of concurrent upgrades (default 10)"
+    -parallel int "number of parallel upgrades (default 10)"
 ```

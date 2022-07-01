@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 	"upgrade-all-services-cli-plugin/internal/command"
+	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/logger"
-	"upgrade-all-services-cli-plugin/internal/validate"
 
 	"code.cloudfoundry.org/cli/plugin"
 )
@@ -13,13 +13,10 @@ import (
 type UpgradePlugin struct{}
 
 func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	if args[0] == "upgrade-all-service-instances" {
-		l := logger.New(time.Minute)
-		err := command.UpgradeAll(cliConnection, args[1:], l)
-		if err != nil {
-			l.Printf("upgrade-all-service-instances plugin failed: %s", err.Error())
-			os.Exit(1)
-		}
+	l := logger.New(time.Minute)
+	if err := command.UpgradeAll(cliConnection, args[1:], l); err != nil {
+		l.Printf("upgrade-all-services plugin failed: %s", err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -30,14 +27,9 @@ func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 		MinCliVersion: plugin.VersionType{Major: 6, Minor: 53, Build: 0},
 		Commands: []plugin.Command{
 			{
-				Name:     "upgrade-all-service-instances",
-				HelpText: "Upgrade all service instances from a broker to the latest available version of their current service plans.",
-				UsageDetails: plugin.Usage{
-					Usage: validate.Usage,
-					Options: map[string]string{
-						"-batch-size": "The number of concurrent upgrades (defaults to 10)",
-					},
-				},
+				Name:         "upgrade-all-services",
+				HelpText:     "Upgrade all service instances from a broker to the latest available version of their current service plans.",
+				UsageDetails: plugin.Usage{Usage: config.Help()},
 			},
 		},
 	}

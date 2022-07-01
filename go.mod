@@ -7,6 +7,7 @@ require (
 	code.cloudfoundry.org/jsonry v1.1.3
 	github.com/google/gops v0.3.24
 	github.com/hashicorp/go-version v1.6.0
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.19.0
@@ -33,7 +34,6 @@ require (
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	rsc.io/goversion v1.2.0 // indirect
