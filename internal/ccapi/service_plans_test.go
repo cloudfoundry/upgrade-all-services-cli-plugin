@@ -3,8 +3,9 @@ package ccapi_test
 import (
 	"net/http"
 
-	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/requester"
+
+	"upgrade-all-services-cli-plugin/internal/ccapi"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
