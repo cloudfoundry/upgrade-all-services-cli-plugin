@@ -3,7 +3,7 @@ package command
 import (
 	"flag"
 	"fmt"
-	"log"
+
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/requester"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 )
 
-func UpgradeAll(cliConnection plugin.CliConnection, args []string, log *log.Logger) error {
+func UpgradeAll(cliConnection plugin.CliConnection, args []string, log upgrader.Logger) error {
 	err := validate.ValidateInput(cliConnection, args)
 	if err != nil {
 		return err

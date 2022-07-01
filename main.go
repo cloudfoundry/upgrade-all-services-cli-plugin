@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
 	"os"
+	"time"
 	"upgrade-all-services-cli-plugin/internal/command"
+	"upgrade-all-services-cli-plugin/internal/logger"
 	"upgrade-all-services-cli-plugin/internal/validate"
 
 	"code.cloudfoundry.org/cli/plugin"
@@ -13,7 +14,7 @@ type UpgradePlugin struct{}
 
 func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "upgrade-all-service-instances" {
-		l := log.New(os.Stdout, "", 0)
+		l := logger.New(time.Minute)
 		err := command.UpgradeAll(cliConnection, args[1:], l)
 		if err != nil {
 			l.Printf("upgrade-all-service-instances plugin failed: %s", err.Error())
@@ -24,17 +25,9 @@ func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name: "UpgradeAllServiceInstances",
-		Version: plugin.VersionType{
-			Major: 0,
-			Minor: 1,
-			Build: 0,
-		},
-		MinCliVersion: plugin.VersionType{
-			Major: 6,
-			Minor: 53,
-			Build: 0,
-		},
+		Name:          "UpgradeAllServiceInstances",
+		Version:       plugin.VersionType{Major: 0, Minor: 1, Build: 0},
+		MinCliVersion: plugin.VersionType{Major: 6, Minor: 53, Build: 0},
 		Commands: []plugin.Command{
 			{
 				Name:     "upgrade-all-service-instances",
