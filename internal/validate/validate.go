@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-const Usage = "cf upgrade-all-service-instances <broker-name>"
+const Usage = "cf upgrade-all-services <broker-name>"
 
 func ValidateInput(cliConnection plugin.CliConnection, args []string) error {
 	if len(args) == 0 {
