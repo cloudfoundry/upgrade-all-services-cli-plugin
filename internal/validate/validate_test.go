@@ -2,14 +2,12 @@ package validate_test
 
 import (
 	"fmt"
-	"log"
-
-	"upgrade-all-services-cli-plugin/internal/validate"
 
 	"upgrade-all-services-cli-plugin/internal/command"
+	"upgrade-all-services-cli-plugin/internal/upgrader/upgraderfakes"
+	"upgrade-all-services-cli-plugin/internal/validate"
 
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,12 +16,12 @@ var _ = Describe("Validate", func() {
 
 	var (
 		fakeCliConnection pluginfakes.FakeCliConnection
-		fakeLogger        *log.Logger
+		fakeLogger        *upgraderfakes.FakeLogger
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = pluginfakes.FakeCliConnection{}
-		fakeLogger = log.Default()
+		fakeLogger = &upgraderfakes.FakeLogger{}
 	})
 
 	Describe("brokername validation", func() {
