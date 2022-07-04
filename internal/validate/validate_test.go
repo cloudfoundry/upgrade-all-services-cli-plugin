@@ -31,7 +31,7 @@ var _ = Describe("Validate", func() {
 			It("fails to run the upgrade", func() {
 				err := validate.ValidateInput(&fakeCliConnection, nil)
 
-				Expect(err).To(MatchError(fmt.Errorf("broker name must be specifed\nusage:\ncf upgrade-all-service-instances <broker-name>")))
+				Expect(err).To(MatchError(fmt.Errorf("broker name must be specifed\nusage:\ncf upgrade-all-services <broker-name>")))
 			})
 		})
 

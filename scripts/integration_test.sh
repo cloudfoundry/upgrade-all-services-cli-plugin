@@ -3,7 +3,7 @@
 set -euo pipefail
 
 function main {
-  testOutput "Building upgrade-all-service-instances plugin"
+  testOutput "Building upgrade-all-services plugin"
 
   SCRIPTS_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
@@ -14,13 +14,13 @@ function main {
       go build -o "$BUILD_DIR/upgrade-all-service-instance-plugin-dev"
   popd
 
-  testOutput "Installing upgrade-all-service-instances plugin"
+  testOutput "Installing upgrade-all-services plugin"
   cf install-plugin "$BUILD_DIR/upgrade-all-service-instance-plugin-dev" -f
 
-  testOutput "Checking upgrade-all-service-instances plugin is usable"
-  cf upgrade-all-service-instances --help
+  testOutput "Checking upgrade-all-services plugin is usable"
+  cf upgrade-all-services --help
 
-  testOutput "Uninstalling upgrade-all-service-instances plugin"
+  testOutput "Uninstalling upgrade-all-services plugin"
   cf uninstall-plugin UpgradeAllServiceInstances
 
   testOutput "Test Success"

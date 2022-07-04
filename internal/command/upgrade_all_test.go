@@ -33,7 +33,7 @@ var _ = Describe("UpgradeAll", func() {
 		It("returns an error", func() {
 			err := command.UpgradeAll(fakeCliConnection, []string{}, fakeLogger)
 
-			Expect(err).To(MatchError(fmt.Errorf("broker name must be specifed\nusage:\ncf upgrade-all-service-instances <broker-name>")))
+			Expect(err).To(MatchError(fmt.Errorf("broker name must be specifed\nusage:\ncf upgrade-all-services <broker-name>")))
 		})
 	})
 
