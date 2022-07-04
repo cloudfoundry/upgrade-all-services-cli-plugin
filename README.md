@@ -23,5 +23,5 @@ cf install-plugin <path_to_plugin_binary>
 cf upgrade-all-services <broker_name>
 
 Options:
-    -batch-size int "number of concurrent upgrades (default 10)"
+    -parallel - number of upgrades to run in parallel (defaults to 10)
 ```
