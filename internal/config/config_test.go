@@ -189,7 +189,7 @@ var _ = Describe("Config", func() {
 
 		When("set", func() {
 			BeforeEach(func() {
-				fakeArgs = append([]string{"-loghttp"}, fakeArgs...)
+				fakeArgs = append(fakeArgs, "-loghttp")
 			})
 
 			It("is true", func() {
@@ -229,7 +229,7 @@ var _ = Describe("Config", func() {
 
 		When("specified", func() {
 			BeforeEach(func() {
-				fakeArgs = append([]string{"-parallel", "42"}, fakeArgs...)
+				fakeArgs = append(fakeArgs, "-parallel", "42")
 			})
 
 			It("gets the value", func() {
@@ -240,7 +240,7 @@ var _ = Describe("Config", func() {
 
 		When("not a number", func() {
 			BeforeEach(func() {
-				fakeArgs = append([]string{"-parallel", "boudica"}, fakeArgs...)
+				fakeArgs = append(fakeArgs, "-parallel", "boudica")
 			})
 
 			It("returns an error", func() {
@@ -250,7 +250,7 @@ var _ = Describe("Config", func() {
 
 		When("too low", func() {
 			BeforeEach(func() {
-				fakeArgs = []string{"-parallel", "0"}
+				fakeArgs = append(fakeArgs, "-parallel", "0")
 			})
 
 			It("returns an error", func() {
@@ -260,7 +260,7 @@ var _ = Describe("Config", func() {
 
 		When("too high", func() {
 			BeforeEach(func() {
-				fakeArgs = []string{"-parallel", "101"}
+				fakeArgs = append(fakeArgs, "-parallel", "101")
 			})
 
 			It("returns an error", func() {
@@ -307,7 +307,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("returns an error", func() {
-				Expect(cfgErr).To(MatchError(`too many parameters`))
+				Expect(cfgErr).To(MatchError(`too many parameters, did not parse: invalid-extra-parameter`))
 			})
 		})
 	})
