@@ -104,7 +104,7 @@ var _ = Describe("Upgrade", func() {
 		})
 	})
 
-	When("batch size is less that number of upgradable instances", func() {
+	When("number of parallel upgrades is less that number of upgradable instances", func() {
 		It("upgrades all instances", func() {
 			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
 			Expect(err).NotTo(HaveOccurred())

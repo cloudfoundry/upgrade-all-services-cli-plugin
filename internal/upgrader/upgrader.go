@@ -26,7 +26,7 @@ type Logger interface {
 	FinalTotals()
 }
 
-func Upgrade(api CFClient, brokerName string, batchSize int, log Logger) error {
+func Upgrade(api CFClient, brokerName string, parallelUpgrades int, log Logger) error {
 	plans, err := api.GetServicePlans(brokerName)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func Upgrade(api CFClient, brokerName string, batchSize int, log Logger) error {
 		close(upgradeQueue)
 	}()
 
-	workers.Run(batchSize, func() {
+	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
 			start := time.Now()
 			log.UpgradeStarting(instance.ServiceInstanceGUID)
