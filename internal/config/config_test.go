@@ -62,7 +62,7 @@ var _ = Describe("Config", func() {
 	})
 
 	Describe("validating API version", func() {
-		When("API version is valid", func() {
+		When("API version is valid v3", func() {
 			BeforeEach(func() {
 				fakeCLIConnection.ApiVersionReturns("3.99.0", nil)
 			})
@@ -72,13 +72,33 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		When("API version is too low", func() {
+		When("API version is too low v3", func() {
 			BeforeEach(func() {
 				fakeCLIConnection.ApiVersionReturns("3.98.0", nil)
 			})
 
 			It("returns an error", func() {
-				Expect(cfgErr).To(MatchError(`plugin requires minimum API version v3.99, got: "3.98.0"`))
+				Expect(cfgErr).To(MatchError(`plugin requires minimum API version 3.99.0 or 2.164.0, got "3.98.0"`))
+			})
+		})
+
+		When("API version is valid v2", func() {
+			BeforeEach(func() {
+				fakeCLIConnection.ApiVersionReturns("2.164.0", nil)
+			})
+
+			It("succeeds", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+
+		When("API version is too low v2", func() {
+			BeforeEach(func() {
+				fakeCLIConnection.ApiVersionReturns("2.163.0", nil)
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`plugin requires minimum API version 3.99.0 or 2.164.0, got "2.163.0"`))
 			})
 		})
 
@@ -88,7 +108,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("returns an error", func() {
-				Expect(cfgErr).To(MatchError(`plugin requires API major version v3, got: "4.0.0"`))
+				Expect(cfgErr).To(MatchError(`plugin requires minimum API version 3.99.0 or 2.164.0, got "4.0.0"`))
 			})
 		})
 
