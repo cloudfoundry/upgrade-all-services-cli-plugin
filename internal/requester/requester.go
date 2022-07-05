@@ -15,12 +15,14 @@ type Requester struct {
 	APIBaseURL string
 	APIToken   string
 	client     *http.Client
+	Logger     Logger
 }
 
 func NewRequester(apiBaseURL, apiToken string, insecureSkipVerify bool) Requester {
 	return Requester{
 		APIBaseURL: apiBaseURL,
 		APIToken:   apiToken,
+		Logger:     nullLogger{},
 		client: &http.Client{
 			Timeout: time.Minute,
 			Transport: &http.Transport{
@@ -30,11 +32,19 @@ func NewRequester(apiBaseURL, apiToken string, insecureSkipVerify bool) Requeste
 	}
 }
 
+type Logger interface {
+	Printf(string, ...any)
+}
+
 func (r Requester) Get(url string, receiver any) error {
 	if reflect.TypeOf(receiver).Kind() != reflect.Ptr {
 		return fmt.Errorf("receiver must be of type Pointer")
 	}
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", r.APIBaseURL, url), nil)
+
+	url = fmt.Sprintf("%s/%s", r.APIBaseURL, url)
+	r.Logger.Printf("HTTP GET: %s", url)
+
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("error creating HTTP request: %s", err)
 	}
@@ -44,6 +54,7 @@ func (r Requester) Get(url string, receiver any) error {
 	if err != nil {
 		return fmt.Errorf("http request error: %s", err)
 	}
+	r.Logger.Printf("Response status %d %s", response.StatusCode, response.Status)
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("http response: %d", response.StatusCode)
 	}
@@ -53,6 +64,7 @@ func (r Requester) Get(url string, receiver any) error {
 	if err != nil {
 		return fmt.Errorf("unable to read http response body error: %s", err)
 	}
+	r.Logger.Printf("Response body: %s", data)
 	err = json.Unmarshal(data, &receiver)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal response into receiver error: %s", err)
@@ -66,7 +78,12 @@ func (r Requester) Patch(url string, data any) error {
 	if err != nil {
 		return fmt.Errorf("error marshaling data: %s", err)
 	}
-	request, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("%s/%s", r.APIBaseURL, url), bytes.NewReader(d))
+
+	url = fmt.Sprintf("%s/%s", r.APIBaseURL, url)
+	r.Logger.Printf("HTTP PATCH: %s", url)
+	r.Logger.Printf("Request body: %s", d)
+
+	request, err := http.NewRequest(http.MethodPatch, url, bytes.NewReader(d))
 	if err != nil {
 		return fmt.Errorf("error creating HTTP request: %s", err)
 	}
@@ -77,9 +94,16 @@ func (r Requester) Patch(url string, data any) error {
 	if err != nil {
 		return fmt.Errorf("http request error: %s", err)
 	}
+	r.Logger.Printf("Response status %d %s", response.StatusCode, response.Status)
 	if response.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("http response: %d", response.StatusCode)
 	}
 
 	return nil
+}
+
+type nullLogger struct{}
+
+func (nullLogger) Printf(string, ...any) {
+	// do nothing
 }

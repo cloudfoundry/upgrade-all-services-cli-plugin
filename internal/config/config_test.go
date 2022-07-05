@@ -5,9 +5,8 @@ import (
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
-	. "github.com/onsi/gomega"
-
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Config", func() {
@@ -180,16 +179,68 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("verbose logging", func() {
+		When("not specified", func() {
+			It("defaults to false", func() {
+				Expect(cfg.HTTPLogging).To(BeFalse())
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+
+		When("set", func() {
+			BeforeEach(func() {
+				fakeArgs = append([]string{"-loghttp"}, fakeArgs...)
+			})
+
+			It("is true", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.HTTPLogging).To(BeTrue())
+			})
+		})
+
+		BeforeEach(func() {
+			fakeCLIConnection.IsSSLDisabledReturns(true, nil)
+		})
+
+		It("gets the skip SSL validation", func() {
+			Expect(cfg.SkipSSLValidation).To(Equal(true))
+			Expect(cfgErr).NotTo(HaveOccurred())
+		})
+
+		When("error getting skip SSL validation", func() {
+			BeforeEach(func() {
+				fakeCLIConnection.IsSSLDisabledReturns(false, fmt.Errorf("boom"))
+			})
+
+			It("returns the error", func() {
+				Expect(cfgErr).To(MatchError("error reading skip SSL validation: boom"))
+				Expect(cfg.SkipSSLValidation).To(Equal(false))
+			})
+		})
+	})
+
 	Describe("parallel upgrades", func() {
 		When("not specified", func() {
 			It("defaults", func() {
 				Expect(cfg.ParallelUpgrades).To(Equal(10))
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+
+		When("specified", func() {
+			BeforeEach(func() {
+				fakeArgs = append([]string{"-parallel", "42"}, fakeArgs...)
+			})
+
+			It("gets the value", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.ParallelUpgrades).To(Equal(42))
 			})
 		})
 
 		When("not a number", func() {
 			BeforeEach(func() {
-				fakeArgs = []string{"-parallel", "boudica"}
+				fakeArgs = append([]string{"-parallel", "boudica"}, fakeArgs...)
 			})
 
 			It("returns an error", func() {
@@ -219,6 +270,17 @@ var _ = Describe("Config", func() {
 	})
 
 	Describe("broker name", func() {
+		When("valid", func() {
+			BeforeEach(func() {
+				fakeArgs = []string{"lovely-broker-name"}
+			})
+
+			It("reads the name", func() {
+				Expect(cfg.BrokerName).To(Equal("lovely-broker-name"))
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+
 		When("not specified", func() {
 			BeforeEach(func() {
 				fakeArgs = nil
@@ -247,7 +309,6 @@ var _ = Describe("Config", func() {
 			It("returns an error", func() {
 				Expect(cfgErr).To(MatchError(`too many parameters`))
 			})
-
 		})
 	})
 })

@@ -10,17 +10,26 @@ import (
 )
 
 const (
-	Usage               = "cf upgrade-all-services <broker-name>"
+	Usage = "cf upgrade-all-services <broker-name>"
+
 	parallelDefault     = 10
 	parallelFlag        = "parallel"
-	parallelDescription = "number of upgrades to run in parallel (defaults to 10)"
+	parallelDescription = "number of upgrades to run in parallel"
+
+	// Ideally we would have used "-v" as the flag as the CF CLI does,
+	// but unfortunately the CF CLI swallows this flag, and it's not
+	// available to plugins
+	httpLoggingDefault     = false
+	httpLoggingFlag        = "loghttp"
+	httpLoggingDescription = "enable HTTP request logging"
 )
 
 func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	var cfg Config
 
 	flagSet := flag.NewFlagSet("upgrade-all-services", flag.ContinueOnError)
-	flagSet.IntVar(&cfg.ParallelUpgrades, "parallel", parallelDefault, parallelDescription)
+	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
+	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 
 	for _, s := range []func() error{
 		func() error {
@@ -61,6 +70,7 @@ type Config struct {
 	APIToken          string
 	APIEndpoint       string
 	SkipSSLValidation bool
+	HTTPLogging       bool
 	ParallelUpgrades  int
 }
 
@@ -76,7 +86,8 @@ type CLIConnection interface {
 
 func Options() map[string]string {
 	return map[string]string{
-		fmt.Sprintf("-%s", parallelFlag): parallelDescription,
+		fmt.Sprintf("-%s", parallelFlag):    parallelDescription,
+		fmt.Sprintf("-%s", httpLoggingFlag): httpLoggingDescription,
 	}
 }
 

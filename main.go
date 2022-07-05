@@ -52,12 +52,11 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		return err
 	}
 
-	return upgrader.Upgrade(
-		ccapi.NewCCAPI(
-			requester.NewRequester(cfg.APIEndpoint, cfg.APIToken, cfg.SkipSSLValidation),
-		),
-		cfg.BrokerName,
-		cfg.ParallelUpgrades,
-		logger.New(time.Minute),
-	)
+	logr := logger.New(time.Minute)
+	reqr := requester.NewRequester(cfg.APIEndpoint, cfg.APIToken, cfg.SkipSSLValidation)
+	if cfg.HTTPLogging {
+		reqr.Logger = logr
+	}
+
+	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, logr)
 }
