@@ -20,8 +20,9 @@ cf install-plugin <path_to_plugin_binary>
 ### Usage
 
 ```
-cf upgrade-all-services <broker_name>
+cf upgrade-all-services <broker_name> [options]
 
 Options:
     -parallel - number of upgrades to run in parallel (defaults to 10)
+    -loghttp  - log HTTP requests and responses
 ```

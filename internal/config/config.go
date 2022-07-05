@@ -5,20 +5,21 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 )
 
 const (
-	Usage = "cf upgrade-all-services <broker-name>"
+	Usage = "cf upgrade-all-services <broker-name> [options]"
 
 	parallelDefault     = 10
 	parallelFlag        = "parallel"
 	parallelDescription = "number of upgrades to run in parallel"
 
 	// Ideally we would have used "-v" as the flag as the CF CLI does,
-	// but unfortunately the CF CLI swallows this flag, and it's not
-	// available to plugins
+	// but unfortunately the CF CLI swallows this flag, and the value
+	// is not available to plugins
 	httpLoggingDefault     = false
 	httpLoggingFlag        = "loghttp"
 	httpLoggingDescription = "enable HTTP request logging"
@@ -47,15 +48,15 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 		func() error {
 			return read("skip SSL validation", conn.IsSSLDisabled, &cfg.SkipSSLValidation)
 		},
-		func() error {
-			return flagSet.Parse(args)
+		func() (err error) {
+			cfg.BrokerName, err = parseCommandLine(flagSet, args)
+			return
 		},
 		func() error {
 			return validateParallelUpgrades(cfg.ParallelUpgrades)
 		},
-		func() (err error) {
-			cfg.BrokerName, err = readBrokerName(flagSet.Args())
-			return
+		func() error {
+			return validateBrokerName(cfg.BrokerName)
 		},
 	} {
 		if err := s(); err != nil {
@@ -89,6 +90,24 @@ func Options() map[string]string {
 		fmt.Sprintf("-%s", parallelFlag):    parallelDescription,
 		fmt.Sprintf("-%s", httpLoggingFlag): httpLoggingDescription,
 	}
+}
+
+func parseCommandLine(flagSet *flag.FlagSet, args []string) (string, error) {
+	if len(args) == 0 {
+		printUsage()
+		return "", fmt.Errorf("missing broker name")
+	}
+
+	if err := flagSet.Parse(args[1:]); err != nil {
+		return "", err
+	}
+
+	if len(flagSet.Args()) > 0 {
+		printUsage()
+		return "", fmt.Errorf("too many parameters, did not parse: %s", strings.Join(flagSet.Args(), " "))
+	}
+
+	return args[0], nil
 }
 
 func read[T any](desc string, get func() (T, error), set *T) error {
@@ -140,23 +159,13 @@ func validateParallelUpgrades(p int) error {
 	return nil
 }
 
-func readBrokerName(args []string) (string, error) {
-	switch len(args) {
-	case 0:
+func validateBrokerName(name string) error {
+	if valid := regexp.MustCompile(`^[\w_.-]+$`).MatchString(name); !valid {
 		printUsage()
-		return "", fmt.Errorf("missing broker name")
-	case 1: // OK
-	default:
-		printUsage()
-		return "", fmt.Errorf("too many parameters")
+		return fmt.Errorf("broker name contains invalid characters")
 	}
 
-	if valid := regexp.MustCompile(`^[\w_.-]+$`).MatchString(args[0]); !valid {
-		printUsage()
-		return "", fmt.Errorf("broker name contains invalid characters")
-	}
-
-	return args[0], nil
+	return nil
 }
 
 func printUsage() {
