@@ -138,16 +138,26 @@ func validateAPIVersion(conn CLIConnection) error {
 		return fmt.Errorf("error retrieving API version: %w", err)
 	}
 
+	var (
+		v3    = version.Must(version.NewVersion("3"))
+		v4    = version.Must(version.NewVersion("4"))
+		v2min = version.Must(version.NewVersion("2.164"))
+		v3min = version.Must(version.NewVersion("3.99"))
+	)
+
 	v, err := version.NewVersion(ver)
 	switch {
 	case err != nil:
 		return fmt.Errorf("error parsing API version: %w", err)
-	case v.GreaterThanOrEqual(version.Must(version.NewVersion("4"))):
-		return fmt.Errorf("plugin requires API major version v3, got: %q", v.String())
-	case v.LessThan(version.Must(version.NewVersion("3.99"))):
-		return fmt.Errorf("plugin requires minimum API version v3.99, got: %q", v.String())
-	default:
+	case v.GreaterThanOrEqual(v3min) && v.LessThan(v4):
 		return nil
+	case v.GreaterThanOrEqual(v2min) && v.LessThan(v3):
+		// There's a bug in CF CLI v6 where the API version is sometimes reported as v3 and sometimes as v2,
+		// depending on whether "cf login" of "cf api" was used. CAPI release 1.109.0 shipped with both
+		// API v3.99 and CF API v2.164, so if we have at least v2.164 then we know that v3.99 is also available
+		return nil
+	default:
+		return fmt.Errorf("plugin requires minimum API version %s or %s, got %q", v3min.String(), v2min.String(), v.String())
 	}
 }
 
