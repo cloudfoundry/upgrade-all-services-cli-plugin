@@ -26,7 +26,7 @@ const (
 
 	dryRunDefault     = false
 	dryRunFlag        = "dry-run"
-	druRunDescription = "print the service instances that would be upgraded"
+	dryRunDescription = "print the service instances that would be upgraded"
 )
 
 func ParseConfig(conn CLIConnection, args []string) (Config, error) {
