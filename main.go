@@ -58,5 +58,5 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		reqr.Logger = logr
 	}
 
-	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, logr)
+	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, cfg.DryRun, logr)
 }

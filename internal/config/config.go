@@ -23,6 +23,10 @@ const (
 	httpLoggingDefault     = false
 	httpLoggingFlag        = "loghttp"
 	httpLoggingDescription = "enable HTTP request logging"
+
+	dryRunDefault     = false
+	dryRunFlag        = "dry-run"
+	dryRunDescription = "print the service instances that would be upgraded"
 )
 
 func ParseConfig(conn CLIConnection, args []string) (Config, error) {
@@ -31,6 +35,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet := flag.NewFlagSet("upgrade-all-services", flag.ContinueOnError)
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
+	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
 
 	for _, s := range []func() error{
 		func() error {
@@ -72,6 +77,7 @@ type Config struct {
 	APIEndpoint       string
 	SkipSSLValidation bool
 	HTTPLogging       bool
+	DryRun            bool
 	ParallelUpgrades  int
 }
 
@@ -87,8 +93,9 @@ type CLIConnection interface {
 
 func Options() map[string]string {
 	return map[string]string{
-		fmt.Sprintf("-%s", parallelFlag):    parallelDescription,
-		fmt.Sprintf("-%s", httpLoggingFlag): httpLoggingDescription,
+		parallelFlag:    parallelDescription,
+		httpLoggingFlag: httpLoggingDescription,
+		dryRunFlag:      dryRunDescription,
 	}
 }
 
