@@ -35,7 +35,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet := flag.NewFlagSet("upgrade-all-services", flag.ContinueOnError)
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
-	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, druRunDescription)
+	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
 
 	for _, s := range []func() error{
 		func() error {
@@ -95,7 +95,7 @@ func Options() map[string]string {
 	return map[string]string{
 		parallelFlag:    parallelDescription,
 		httpLoggingFlag: httpLoggingDescription,
-		dryRunFlag:      druRunDescription,
+		dryRunFlag:      dryRunDescription,
 	}
 }
 
