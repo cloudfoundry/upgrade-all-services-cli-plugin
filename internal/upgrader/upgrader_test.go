@@ -58,7 +58,7 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("upgrades a service instance", func() {
-		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, fakeLog)
+		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("getting the service plans")
@@ -78,7 +78,7 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("should pass the correct information to the logger", func() {
-		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
+		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
@@ -95,18 +95,49 @@ var _ = Describe("Upgrade", func() {
 		Expect(fakeLog.FinalTotalsCallCount()).To(Equal(1))
 	})
 
+	When("performing a dry run", func() {
+		It("should print out service GUIDs and not attempt to upgrade", func() {
+			var lines []string
+			fakeLog.PrintfStub = func(format string, a ...any) {
+				lines = append(lines, fmt.Sprintf(format, a...))
+			}
+
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, fakeLog)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("getting the service plans")
+			Expect(fakeCFClient.GetServicePlansCallCount()).To(Equal(1))
+			Expect(fakeCFClient.GetServicePlansArgsForCall(0)).To(Equal(fakeBrokerName))
+
+			By("getting the service instances")
+			Expect(fakeCFClient.GetServiceInstancesCallCount()).To(Equal(1))
+			Expect(fakeCFClient.GetServiceInstancesArgsForCall(0)).To(Equal([]string{fakePlanGUID}))
+
+			By("not calling upgrade")
+			Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
+
+			By("printing the GUIDs")
+			Expect(lines).To(ContainElements(
+				fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName),
+				"the following service instances would be upgraded:",
+				fmt.Sprintf(" - %s", fakeInstance1.GUID),
+				fmt.Sprintf(" - %s", fakeInstance2.GUID),
+			))
+		})
+	})
+
 	When("no service plans are available", func() {
 		It("returns error stating no plans available", func() {
 			fakeCFClient.GetServicePlansReturns([]ccapi.Plan{}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
 			Expect(err).To(MatchError(fmt.Sprintf("no service plans available for broker: %s", fakeBrokerName)))
 		})
 	})
 
 	When("number of parallel upgrades is less that number of upgradable instances", func() {
 		It("upgrades all instances", func() {
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("calling upgrade on each upgradeable instance")
@@ -122,7 +153,7 @@ var _ = Describe("Upgrade", func() {
 		It("should succeed and pass the correct information to the logger", func() {
 			fakeCFClient.GetServiceInstancesReturns([]ccapi.ServiceInstance{}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLog.PrintfCallCount()).To(Equal(2))
@@ -134,7 +165,7 @@ var _ = Describe("Upgrade", func() {
 		It("returns the error", func() {
 			fakeCFClient.GetServicePlansReturns(nil, fmt.Errorf("plan-error"))
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
 			Expect(err).To(MatchError("plan-error"))
 		})
 	})
@@ -143,7 +174,7 @@ var _ = Describe("Upgrade", func() {
 		It("returns the error", func() {
 			fakeCFClient.GetServiceInstancesReturns(nil, fmt.Errorf("instance-error"))
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
 			Expect(err).To(MatchError("instance-error"))
 		})
 	})
@@ -155,7 +186,7 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		It("should pass the correct information to the logger", func() {
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))

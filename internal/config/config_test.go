@@ -289,6 +289,38 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("dry-run", func() {
+		When("not specified", func() {
+			It("is false", func() {
+				Expect(cfg.DryRun).To(BeFalse())
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+
+		When("specified", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-dry-run")
+			})
+
+			It("is true", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.DryRun).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("invalid combinations", func() {
+		When("-dry-run and -parallel are specified together", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-dry-run", "-parallel", "10")
+			})
+
+			It("succeeds", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("broker name", func() {
 		When("valid", func() {
 			BeforeEach(func() {
