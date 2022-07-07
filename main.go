@@ -11,7 +11,11 @@ import (
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/blang/semver/v4"
 )
+
+// version will be set via -ldflags at build time
+var version = "0.0.0"
 
 type UpgradePlugin struct{}
 
@@ -27,7 +31,7 @@ func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name:          "UpgradeAllServices",
-		Version:       plugin.VersionType{Major: 0, Minor: 1, Build: 0},
+		Version:       pluginVersion(),
 		MinCliVersion: plugin.VersionType{Major: 6, Minor: 53, Build: 0},
 		Commands: []plugin.Command{
 			{
@@ -59,4 +63,13 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 	}
 
 	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, cfg.DryRun, logr)
+}
+
+func pluginVersion() plugin.VersionType {
+	v := semver.MustParse(version)
+	return plugin.VersionType{
+		Major: int(v.Major),
+		Minor: int(v.Minor),
+		Build: int(v.Patch),
+	}
 }
