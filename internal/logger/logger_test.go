@@ -42,44 +42,44 @@ var _ = Describe("Logger", func() {
 
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeStarting("fake-guid")
+			l.UpgradeStarting("my-instance", "fake-guid")
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: starting to upgrade "fake-guid"\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: starting to upgrade instance: "my-instance" guid: "fake-guid"\n`))
 	})
 
 	It("can log the success of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeSucceeded("fake-guid", time.Minute)
+			l.UpgradeSucceeded("my-instance", "fake-guid", time.Minute)
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: finished upgrade of "fake-guid" successfully after 1m0s\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: finished upgrade of instance: "my-instance" guid: "fake-guid" successfully after 1m0s\n`))
 	})
 
 	It("can log the failure of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeFailed("fake-guid", time.Minute, fmt.Errorf("boom"))
+			l.UpgradeFailed("my-instance", "fake-guid", time.Minute, fmt.Errorf("boom"))
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: upgrade of "fake-guid" failed after 1m0s: boom\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: upgrade of instance: "my-instance" guid: "fake-guid" failed after 1m0s: boom\n`))
 	})
 
 	It("can log the final totals", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeFailed("fake-guid-1", time.Minute, fmt.Errorf("boom"))
-		l.UpgradeFailed("fake-guid-2", time.Minute, fmt.Errorf("bang"))
-		l.UpgradeSucceeded("fake-guid-3", time.Minute)
+		l.UpgradeFailed("my-first-instance", "fake-guid-1", time.Minute, fmt.Errorf("boom"))
+		l.UpgradeFailed("my-second-instance", "fake-guid-2", time.Minute, fmt.Errorf("bang"))
+		l.UpgradeSucceeded("my-third-instance", "fake-guid-3", time.Minute)
 
 		result := captureStdout(func() {
 			l.FinalTotals()
 		})
 		Expect(result).To(MatchRegexp(`: successfully upgraded 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: failed to upgrade 2 instances\n`))
-		Expect(result).To(MatchRegexp(`: fake-guid-1\s+| boom\n'`))
-		Expect(result).To(MatchRegexp(`: fake-guid-2\s+| bang\n'`))
+		Expect(result).To(MatchRegexp(`: my-first-instance\s+| fake-guid-1\s+| boom\n'`))
+		Expect(result).To(MatchRegexp(`: my-second-instance\s+| fake-guid-2\s+| bang\n'`))
 	})
 
 	It("logs on a ticker", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeSucceeded("fake-guid", time.Minute)
-		l.UpgradeSucceeded("fake-guid", time.Minute)
+		l.UpgradeSucceeded("", "fake-guid", time.Minute)
+		l.UpgradeSucceeded("", "fake-guid", time.Minute)
 
 		result := captureStdout(func() {
 			time.Sleep(150 * time.Millisecond)

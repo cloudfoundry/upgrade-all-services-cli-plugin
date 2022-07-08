@@ -19,9 +19,9 @@ type CFClient interface {
 //counterfeiter:generate . Logger
 type Logger interface {
 	Printf(format string, a ...any)
-	UpgradeStarting(guid string)
-	UpgradeSucceeded(guid string, duration time.Duration)
-	UpgradeFailed(guid string, duration time.Duration, err error)
+	UpgradeStarting(name string, guid string)
+	UpgradeSucceeded(name string, guid string, duration time.Duration)
+	UpgradeFailed(name string, guid string, duration time.Duration, err error)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
@@ -50,6 +50,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 
 func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, planVersions map[string]string, parallelUpgrades int, log Logger) error {
 	type upgradeTask struct {
+		ServiceInstanceName    string
 		ServiceInstanceGUID    string
 		MaintenanceInfoVersion string
 	}
@@ -58,6 +59,7 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	go func() {
 		for _, instance := range upgradableInstances {
 			upgradeQueue <- upgradeTask{
+				ServiceInstanceName:    instance.Name,
 				ServiceInstanceGUID:    instance.GUID,
 				MaintenanceInfoVersion: planVersions[instance.PlanGUID],
 			}
@@ -68,13 +70,13 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
 			start := time.Now()
-			log.UpgradeStarting(instance.ServiceInstanceGUID)
+			log.UpgradeStarting(instance.ServiceInstanceName, instance.ServiceInstanceGUID)
 			err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
 			switch err {
 			case nil:
-				log.UpgradeSucceeded(instance.ServiceInstanceGUID, time.Since(start))
+				log.UpgradeSucceeded(instance.ServiceInstanceName, instance.ServiceInstanceGUID, time.Since(start))
 			default:
-				log.UpgradeFailed(instance.ServiceInstanceGUID, time.Since(start), err)
+				log.UpgradeFailed(instance.ServiceInstanceName, instance.ServiceInstanceGUID, time.Since(start), err)
 			}
 		}
 	})

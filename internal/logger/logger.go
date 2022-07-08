@@ -11,7 +11,7 @@ import (
 func New(period time.Duration) *Logger {
 	l := Logger{
 		ticker:   time.NewTicker(period),
-		failures: make(map[string]error),
+		failures: []failure{},
 	}
 
 	go func() {
@@ -23,13 +23,19 @@ func New(period time.Duration) *Logger {
 	return &l
 }
 
+type failure struct {
+	name string
+	id   string
+	err  error
+}
+
 type Logger struct {
 	lock      sync.Mutex
 	ticker    *time.Ticker
 	target    int
 	complete  int
 	successes int
-	failures  map[string]error
+	failures  []failure
 }
 
 func (l *Logger) Printf(format string, a ...any) {
@@ -39,29 +45,33 @@ func (l *Logger) Printf(format string, a ...any) {
 	l.printf(format, a...)
 }
 
-func (l *Logger) UpgradeStarting(guid string) {
+func (l *Logger) UpgradeStarting(name string, guid string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.printf("starting to upgrade %q", guid)
+	l.printf("starting to upgrade instance: %q guid: %q", name, guid)
 }
 
-func (l *Logger) UpgradeSucceeded(guid string, duration time.Duration) {
+func (l *Logger) UpgradeSucceeded(name string, guid string, duration time.Duration) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.successes++
 	l.complete++
-	l.printf("finished upgrade of %q successfully after %s", guid, duration)
+	l.printf("finished upgrade of instance: %q guid: %q successfully after %s", name, guid, duration)
 }
 
-func (l *Logger) UpgradeFailed(guid string, duration time.Duration, err error) {
+func (l *Logger) UpgradeFailed(name string, guid string, duration time.Duration, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.failures[guid] = err
+	l.failures = append(l.failures, failure{
+		name: name,
+		id:   guid,
+		err:  err,
+	})
 	l.complete++
-	l.printf("upgrade of %q failed after %s: %s", guid, duration, err)
+	l.printf("upgrade of instance: %q guid: %q failed after %s: %s", name, guid, duration, err)
 }
 
 func (l *Logger) InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int) {
@@ -91,11 +101,11 @@ func (l *Logger) FinalTotals() {
 
 		var sb strings.Builder
 		tw := tabwriter.NewWriter(&sb, 0, 0, 1, ' ', tabwriter.Debug)
-		fmt.Fprintln(tw, "Service Instance GUID\t Details")
-		fmt.Fprintln(tw, "---------------------\t -------")
+		fmt.Fprintln(tw, "Service Instance Name\tService Instance GUID\t Details")
+		fmt.Fprintln(tw, "---------------------\t---------------------\t -------")
 
-		for guid, err := range l.failures {
-			fmt.Fprintf(tw, "%s\t %s\n", guid, err)
+		for _, failure := range l.failures {
+			fmt.Fprintf(tw, "%s\t %s\t %s\n", failure.name, failure.id, failure.err)
 		}
 		tw.Flush()
 
