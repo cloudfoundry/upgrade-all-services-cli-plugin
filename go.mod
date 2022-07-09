@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	code.cloudfoundry.org/jsonry v1.1.3
 	github.com/blang/semver/v4 v4.0.0
-	github.com/google/gops v0.3.24
+	github.com/google/gops v0.3.25
 	github.com/hashicorp/go-version v1.6.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/onsi/ginkgo/v2 v2.1.4
