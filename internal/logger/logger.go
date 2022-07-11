@@ -45,14 +45,14 @@ func (l *Logger) Printf(format string, a ...any) {
 	l.printf(format, a...)
 }
 
-func (l *Logger) UpgradeStarting(name string, guid string) {
+func (l *Logger) UpgradeStarting(name, guid string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.printf("starting to upgrade instance: %q guid: %q", name, guid)
 }
 
-func (l *Logger) UpgradeSucceeded(name string, guid string, duration time.Duration) {
+func (l *Logger) UpgradeSucceeded(name, guid string, duration time.Duration) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
@@ -61,7 +61,7 @@ func (l *Logger) UpgradeSucceeded(name string, guid string, duration time.Durati
 	l.printf("finished upgrade of instance: %q guid: %q successfully after %s", name, guid, duration)
 }
 
-func (l *Logger) UpgradeFailed(name string, guid string, duration time.Duration, err error) {
+func (l *Logger) UpgradeFailed(name, guid string, duration time.Duration, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 

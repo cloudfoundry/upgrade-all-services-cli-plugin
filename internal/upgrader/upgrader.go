@@ -19,9 +19,9 @@ type CFClient interface {
 //counterfeiter:generate . Logger
 type Logger interface {
 	Printf(format string, a ...any)
-	UpgradeStarting(name string, guid string)
-	UpgradeSucceeded(name string, guid string, duration time.Duration)
-	UpgradeFailed(name string, guid string, duration time.Duration, err error)
+	UpgradeStarting(name, guid string)
+	UpgradeSucceeded(name, guid string, duration time.Duration)
+	UpgradeFailed(name, guid string, duration time.Duration, err error)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
