@@ -78,8 +78,8 @@ var _ = Describe("Logger", func() {
 
 	It("logs on a ticker", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeSucceeded("", "fake-guid", time.Minute)
-		l.UpgradeSucceeded("", "fake-guid", time.Minute)
+		l.UpgradeSucceeded("fake-name", "fake-guid", time.Minute)
+		l.UpgradeSucceeded("fake-name", "fake-guid", time.Minute)
 
 		result := captureStdout(func() {
 			time.Sleep(150 * time.Millisecond)

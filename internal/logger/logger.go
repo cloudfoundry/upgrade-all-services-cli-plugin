@@ -25,7 +25,7 @@ func New(period time.Duration) *Logger {
 
 type failure struct {
 	name string
-	id   string
+	guid string
 	err  error
 }
 
@@ -67,7 +67,7 @@ func (l *Logger) UpgradeFailed(name, guid string, duration time.Duration, err er
 
 	l.failures = append(l.failures, failure{
 		name: name,
-		id:   guid,
+		guid: guid,
 		err:  err,
 	})
 	l.complete++
@@ -105,7 +105,7 @@ func (l *Logger) FinalTotals() {
 		fmt.Fprintln(tw, "---------------------\t---------------------\t -------")
 
 		for _, failure := range l.failures {
-			fmt.Fprintf(tw, "%s\t %s\t %s\n", failure.name, failure.id, failure.err)
+			fmt.Fprintf(tw, "%s\t %s\t %s\n", failure.name, failure.guid, failure.err)
 		}
 		tw.Flush()
 
