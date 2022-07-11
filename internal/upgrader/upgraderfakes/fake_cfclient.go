@@ -3,7 +3,6 @@ package upgraderfakes
 
 import (
 	"sync"
-
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 )

@@ -9,6 +9,7 @@ import (
 
 type ServiceInstance struct {
 	GUID             string `json:"guid"`
+	Name             string `json:"name"`
 	UpgradeAvailable bool   `json:"upgrade_available"`
 	PlanGUID         string `jsonry:"relationships.service_plan.data.guid"`
 	LastOperation    struct {
