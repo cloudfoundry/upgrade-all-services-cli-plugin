@@ -33,11 +33,13 @@ var _ = Describe("Upgrade", func() {
 			MaintenanceInfoVersion: "test-maintenance-info",
 		}
 		fakeInstance1 = ccapi.ServiceInstance{
+			Name:             "fake-instance-name-1",
 			GUID:             "fake-instance-guid-1",
 			PlanGUID:         fakePlanGUID,
 			UpgradeAvailable: true,
 		}
 		fakeInstance2 = ccapi.ServiceInstance{
+			Name:             "fake-instance-name-2",
 			GUID:             "fake-instance-guid-2",
 			PlanGUID:         fakePlanGUID,
 			UpgradeAvailable: true,
@@ -87,8 +89,12 @@ var _ = Describe("Upgrade", func() {
 		Expect(actualUpgradable).To(Equal(2))
 
 		Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
-		Expect(fakeLog.UpgradeStartingArgsForCall(0)).To(Equal("fake-instance-guid-1"))
-		Expect(fakeLog.UpgradeStartingArgsForCall(1)).To(Equal("fake-instance-guid-2"))
+		name1, guid1 := fakeLog.UpgradeStartingArgsForCall(0)
+		Expect(name1).To(Equal("fake-instance-name-1"))
+		Expect(guid1).To(Equal("fake-instance-guid-1"))
+		name2, guid2 := fakeLog.UpgradeStartingArgsForCall(1)
+		Expect(name2).To(Equal("fake-instance-name-2"))
+		Expect(guid2).To(Equal("fake-instance-guid-2"))
 
 		Expect(fakeLog.UpgradeSucceededCallCount()).To(Equal(2))
 		Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
@@ -195,8 +201,12 @@ var _ = Describe("Upgrade", func() {
 			Expect(actualUpgradable).To(Equal(2))
 
 			Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
-			Expect(fakeLog.UpgradeStartingArgsForCall(0)).To(Equal("fake-instance-guid-1"))
-			Expect(fakeLog.UpgradeStartingArgsForCall(1)).To(Equal("fake-instance-guid-2"))
+			name1, guid1 := fakeLog.UpgradeStartingArgsForCall(0)
+			Expect(name1).To(Equal("fake-instance-name-1"))
+			Expect(guid1).To(Equal("fake-instance-guid-1"))
+			name2, guid2 := fakeLog.UpgradeStartingArgsForCall(1)
+			Expect(name2).To(Equal("fake-instance-name-2"))
+			Expect(guid2).To(Equal("fake-instance-guid-2"))
 
 			Expect(fakeLog.UpgradeSucceededCallCount()).To(Equal(1))
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(1))
