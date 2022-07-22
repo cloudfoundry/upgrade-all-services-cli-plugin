@@ -24,22 +24,22 @@ download: ## download go module dependencies
 .PHONY: lint
 lint: checkformat checkimports vet staticcheck ## lint the source
 
-checkformat: ## Checks that the code is formatted correctly
+checkformat: ## check that the code is formatted correctly
 	@@if [ -n "$$(gofmt -s -e -l -d .)" ]; then                   \
     		echo "gofmt check failed: run 'gofmt -d -e -l -w .'"; \
     		exit 1;                                               \
       fi
 
-checkimports: ## Checks that imports are formatted correctly
+checkimports: ## check that imports are formatted correctly
 	@@if [ -n "$$(go run golang.org/x/tools/cmd/goimports -l -d .)" ]; then \
-		echo "goimports check failed: run 'make format'";                      \
-		exit 1;                                                                \
+		echo "goimports check failed: run 'make format'";               \
+		exit 1;                                                         \
 	fi
 
-vet: ## Runs go vet
+vet: ## run go vet
 	go vet ./...
 
-staticcheck: ## Runs staticcheck
+staticcheck: ## run staticcheck
 	go run honnef.co/go/tools/cmd/staticcheck ./...
 
 
@@ -49,3 +49,9 @@ staticcheck: ## Runs staticcheck
 format: ## format the source
 	gofmt -s -e -l -w .
 	go run golang.org/x/tools/cmd/goimports -l -w .
+
+###### Build ##################################################################
+
+.PHONY: build
+build: ## use goreleaser to build the plugin for all target platforms
+	goreleaser build --rm-dist --snapshot
