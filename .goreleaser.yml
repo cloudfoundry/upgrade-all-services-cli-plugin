@@ -13,3 +13,5 @@ archives:
   files:
   - none*
 changelog:
+checksum:
+  algorithm: sha1
