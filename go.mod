@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible
-	code.cloudfoundry.org/jsonry v1.1.3
+	code.cloudfoundry.org/jsonry v1.1.4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/google/gops v0.3.25
 	github.com/hashicorp/go-version v1.6.0
@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
 	golang.org/x/tools v0.1.11-0.20220513221640-090b14e8501f
-	honnef.co/go/tools v0.3.3
+	honnef.co/go/tools v0.4.0-0.dev
 )
 
 require (
