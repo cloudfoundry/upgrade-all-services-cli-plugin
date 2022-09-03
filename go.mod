@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/onsi/ginkgo/v2 v2.1.6
-	github.com/onsi/gomega v1.20.1
+	github.com/onsi/gomega v1.20.2
 	golang.org/x/tools v0.1.12
 	honnef.co/go/tools v0.4.0-0.dev
 )
