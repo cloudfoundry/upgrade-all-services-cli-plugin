@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	code.cloudfoundry.org/jsonry v1.1.4
 	github.com/blang/semver/v4 v4.0.0
-	github.com/google/gops v0.3.25
+	github.com/google/gops v0.3.26
 	github.com/hashicorp/go-version v1.6.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0
 	github.com/onsi/ginkgo/v2 v2.5.1
@@ -23,10 +23,12 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
-	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/shirou/gopsutil/v3 v3.22.4 // indirect
+	github.com/shirou/gopsutil/v3 v3.22.10 // indirect
+	github.com/spf13/cobra v1.6.1 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
