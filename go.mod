@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/onsi/ginkgo/v2 v2.9.0
-	github.com/onsi/gomega v1.27.2
+	github.com/onsi/gomega v1.27.3
 	golang.org/x/tools v0.7.0
 	honnef.co/go/tools v0.4.2
 )
@@ -20,7 +20,7 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
