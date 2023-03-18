@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.4
 	golang.org/x/tools v0.7.0
-	honnef.co/go/tools v0.4.2
+	honnef.co/go/tools v0.4.3
 )
 
 require (
