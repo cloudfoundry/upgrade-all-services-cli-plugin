@@ -40,6 +40,13 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(`total instances: 1\n.*upgradable instances: 2\n`))
 	})
 
+	It("can log that it is skipping an instance", func() {
+		result := captureStdout(func() {
+			l.SkippingInstance("my-instance", "fake-guid", true, "create", "failed")
+		})
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-instance" guid: "fake-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
+	})
+
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
 			l.UpgradeStarting("my-instance", "fake-guid")
@@ -66,10 +73,12 @@ var _ = Describe("Logger", func() {
 		l.UpgradeFailed("my-first-instance", "fake-guid-1", time.Minute, fmt.Errorf("boom"))
 		l.UpgradeFailed("my-second-instance", "fake-guid-2", time.Minute, fmt.Errorf("bang"))
 		l.UpgradeSucceeded("my-third-instance", "fake-guid-3", time.Minute)
+		l.SkippingInstance("skipped", "skipped-guid", true, "create", "failed")
 
 		result := captureStdout(func() {
 			l.FinalTotals()
 		})
+		Expect(result).To(MatchRegexp(`: skipped 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: successfully upgraded 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: failed to upgrade 2 instances\n`))
 		Expect(result).To(MatchRegexp(`: my-first-instance\s+| fake-guid-1\s+| boom\n'`))

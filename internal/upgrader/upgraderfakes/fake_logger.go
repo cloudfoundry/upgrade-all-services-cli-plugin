@@ -24,6 +24,15 @@ type FakeLogger struct {
 		arg1 string
 		arg2 []any
 	}
+	SkippingInstanceStub        func(string, string, bool, string, string)
+	skippingInstanceMutex       sync.RWMutex
+	skippingInstanceArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 bool
+		arg4 string
+		arg5 string
+	}
 	UpgradeFailedStub        func(string, string, time.Duration, error)
 	upgradeFailedMutex       sync.RWMutex
 	upgradeFailedArgsForCall []struct {
@@ -139,6 +148,42 @@ func (fake *FakeLogger) PrintfArgsForCall(i int) (string, []any) {
 	return argsForCall.arg1, argsForCall.arg2
 }
 
+func (fake *FakeLogger) SkippingInstance(arg1 string, arg2 string, arg3 bool, arg4 string, arg5 string) {
+	fake.skippingInstanceMutex.Lock()
+	fake.skippingInstanceArgsForCall = append(fake.skippingInstanceArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 bool
+		arg4 string
+		arg5 string
+	}{arg1, arg2, arg3, arg4, arg5})
+	stub := fake.SkippingInstanceStub
+	fake.recordInvocation("SkippingInstance", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.skippingInstanceMutex.Unlock()
+	if stub != nil {
+		fake.SkippingInstanceStub(arg1, arg2, arg3, arg4, arg5)
+	}
+}
+
+func (fake *FakeLogger) SkippingInstanceCallCount() int {
+	fake.skippingInstanceMutex.RLock()
+	defer fake.skippingInstanceMutex.RUnlock()
+	return len(fake.skippingInstanceArgsForCall)
+}
+
+func (fake *FakeLogger) SkippingInstanceCalls(stub func(string, string, bool, string, string)) {
+	fake.skippingInstanceMutex.Lock()
+	defer fake.skippingInstanceMutex.Unlock()
+	fake.SkippingInstanceStub = stub
+}
+
+func (fake *FakeLogger) SkippingInstanceArgsForCall(i int) (string, string, bool, string, string) {
+	fake.skippingInstanceMutex.RLock()
+	defer fake.skippingInstanceMutex.RUnlock()
+	argsForCall := fake.skippingInstanceArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+}
+
 func (fake *FakeLogger) UpgradeFailed(arg1 string, arg2 string, arg3 time.Duration, arg4 error) {
 	fake.upgradeFailedMutex.Lock()
 	fake.upgradeFailedArgsForCall = append(fake.upgradeFailedArgsForCall, struct {
@@ -250,6 +295,8 @@ func (fake *FakeLogger) Invocations() map[string][][]interface{} {
 	defer fake.initialTotalsMutex.RUnlock()
 	fake.printfMutex.RLock()
 	defer fake.printfMutex.RUnlock()
+	fake.skippingInstanceMutex.RLock()
+	defer fake.skippingInstanceMutex.RUnlock()
 	fake.upgradeFailedMutex.RLock()
 	defer fake.upgradeFailedMutex.RUnlock()
 	fake.upgradeStartingMutex.RLock()

@@ -35,6 +35,7 @@ type Logger struct {
 	target    int
 	complete  int
 	successes int
+	skipped   int
 	failures  []failure
 }
 
@@ -43,6 +44,14 @@ func (l *Logger) Printf(format string, a ...any) {
 	defer l.lock.Unlock()
 
 	l.printf(format, a...)
+}
+
+func (l *Logger) SkippingInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	l.skipped++
+	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", name, guid, upgradeAvailable, lastOperationType, lastOperationState)
 }
 
 func (l *Logger) UpgradeStarting(name, guid string) {
@@ -93,6 +102,7 @@ func (l *Logger) FinalTotals() {
 
 	l.printf(l.tickerMessage())
 	l.separator()
+	l.printf("skipped %d instances", l.skipped)
 	l.printf("successfully upgraded %d instances", l.successes)
 
 	if len(l.failures) > 0 {
