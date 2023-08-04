@@ -19,6 +19,7 @@ type CFClient interface {
 //counterfeiter:generate . Logger
 type Logger interface {
 	Printf(format string, a ...any)
+	SkippingInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string)
 	UpgradeStarting(name, guid string)
 	UpgradeSucceeded(name, guid string, duration time.Duration)
 	UpgradeFailed(name, guid string, duration time.Duration, err error)
@@ -33,7 +34,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 	}
 
 	log.Printf("discovering service instances for broker: %s", brokerName)
-	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions))
+	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions), log)
 	switch {
 	case err != nil:
 		return err
@@ -112,7 +113,7 @@ func discoverServicePlans(api CFClient, brokerName string) (map[string]string, e
 	return planVersions, nil
 }
 
-func discoverUpgradeableInstances(api CFClient, planGUIDs []string) ([]ccapi.ServiceInstance, int, error) {
+func discoverUpgradeableInstances(api CFClient, planGUIDs []string, log Logger) ([]ccapi.ServiceInstance, int, error) {
 	serviceInstances, err := api.GetServiceInstances(planGUIDs)
 	if err != nil {
 		return nil, 0, err
@@ -120,12 +121,18 @@ func discoverUpgradeableInstances(api CFClient, planGUIDs []string) ([]ccapi.Ser
 
 	var upgradableInstances []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
-		if i.UpgradeAvailable {
+		if i.UpgradeAvailable && isCreateFailed(i.LastOperation.Type, i.LastOperation.State) {
+			log.SkippingInstance(i.Name, i.GUID, i.UpgradeAvailable, i.LastOperation.Type, i.LastOperation.State)
+		} else if i.UpgradeAvailable {
 			upgradableInstances = append(upgradableInstances, i)
 		}
 	}
 
 	return upgradableInstances, len(serviceInstances), nil
+}
+
+func isCreateFailed(operationType, operationState string) bool {
+	return operationType == "create" && operationState == "failed"
 }
 
 func keys(m map[string]string) []string {

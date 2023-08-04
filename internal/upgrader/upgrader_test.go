@@ -18,13 +18,14 @@ var _ = Describe("Upgrade", func() {
 	)
 
 	var (
-		fakeCFClient          *upgraderfakes.FakeCFClient
-		fakePlan              ccapi.Plan
-		fakeInstance1         ccapi.ServiceInstance
-		fakeInstance2         ccapi.ServiceInstance
-		fakeInstanceNoUpgrade ccapi.ServiceInstance
-		fakeServiceInstances  []ccapi.ServiceInstance
-		fakeLog               *upgraderfakes.FakeLogger
+		fakeCFClient             *upgraderfakes.FakeCFClient
+		fakePlan                 ccapi.Plan
+		fakeInstance1            ccapi.ServiceInstance
+		fakeInstance2            ccapi.ServiceInstance
+		fakeInstanceNoUpgrade    ccapi.ServiceInstance
+		fakeInstanceCreateFailed ccapi.ServiceInstance
+		fakeServiceInstances     []ccapi.ServiceInstance
+		fakeLog                  *upgraderfakes.FakeLogger
 	)
 
 	BeforeEach(func() {
@@ -49,8 +50,16 @@ var _ = Describe("Upgrade", func() {
 			PlanGUID:         fakePlanGUID,
 			UpgradeAvailable: false,
 		}
+		fakeInstanceCreateFailed = ccapi.ServiceInstance{
+			Name:             "fake-instance-create-failed",
+			GUID:             "fake-instance-create-failed-GUID",
+			PlanGUID:         fakePlanGUID,
+			UpgradeAvailable: true,
+		}
 
-		fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstanceNoUpgrade}
+		fakeInstanceCreateFailed.LastOperation.Type = "create"
+		fakeInstanceCreateFailed.LastOperation.State = "failed"
+		fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstanceNoUpgrade, fakeInstanceCreateFailed}
 
 		fakeCFClient = &upgraderfakes.FakeCFClient{}
 		fakeCFClient.GetServicePlansReturns([]ccapi.Plan{fakePlan}, nil)
@@ -85,8 +94,16 @@ var _ = Describe("Upgrade", func() {
 
 		Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
 		actualTotal, actualUpgradable := fakeLog.InitialTotalsArgsForCall(0)
-		Expect(actualTotal).To(Equal(3))
+		Expect(actualTotal).To(Equal(4))
 		Expect(actualUpgradable).To(Equal(2))
+
+		Expect(fakeLog.SkippingInstanceCallCount()).To(Equal(1))
+		nameSkipped, guidSkipped, upgradeAvailable, lastOperation, lastOperationStatus := fakeLog.SkippingInstanceArgsForCall(0)
+		Expect(nameSkipped).To(Equal("fake-instance-create-failed"))
+		Expect(guidSkipped).To(Equal("fake-instance-create-failed-GUID"))
+		Expect(upgradeAvailable).To(BeTrue())
+		Expect(lastOperation).To(Equal("create"))
+		Expect(lastOperationStatus).To(Equal("failed"))
 
 		Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
 		name1, guid1 := fakeLog.UpgradeStartingArgsForCall(0)
@@ -197,7 +214,7 @@ var _ = Describe("Upgrade", func() {
 
 			Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
 			actualTotal, actualUpgradable := fakeLog.InitialTotalsArgsForCall(0)
-			Expect(actualTotal).To(Equal(3))
+			Expect(actualTotal).To(Equal(4))
 			Expect(actualUpgradable).To(Equal(2))
 
 			Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
