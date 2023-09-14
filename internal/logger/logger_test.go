@@ -17,14 +17,6 @@ import (
 
 var _ upgrader.Logger = &logger.Logger{}
 
-func basicInstance(name, guid string) ccapi.ServiceInstance {
-	return ccapi.ServiceInstance{Name: name, GUID: guid}
-}
-
-func fullInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) ccapi.ServiceInstance {
-	return ccapi.ServiceInstance{Name: name, GUID: guid, UpgradeAvailable: upgradeAvailable, LastOperation: ccapi.LastOperation{Type: lastOperationType, State: lastOperationState}}
-}
-
 var _ = Describe("Logger", func() {
 	const timestampRegexp = `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)`
 
@@ -90,8 +82,12 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(`: skipped 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: successfully upgraded 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: failed to upgrade 2 instances\n`))
-		Expect(result).To(MatchRegexp(`: my-first-instance\s+| fake-guid-1\s+| boom\n'`))
-		Expect(result).To(MatchRegexp(`: my-second-instance\s+| fake-guid-2\s+| bang\n'`))
+		Expect(result).To(MatchRegexp(`Service Instance Name: "my-first-instance"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance GUID: "fake-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Details: "boom"\n`))
+		Expect(result).To(MatchRegexp(`Service Instance Name: "my-second-instance"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance GUID: "fake-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Details: "bang"\n`))
 	})
 
 	It("logs on a ticker", func() {
@@ -106,6 +102,49 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(timestampRegexp + `: upgraded 2 of 5\n`))
 	})
 })
+
+func basicInstance(name, guid string) ccapi.ServiceInstance {
+	return fullInstance(name, guid, false, "fake-op-type", "fake-op-state")
+}
+
+func fullInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) ccapi.ServiceInstance {
+	return ccapi.ServiceInstance{
+		Name: name,
+		GUID: guid,
+
+		PlanGUID:  "fake-plan-guid",
+		SpaceGUID: "fake-space-guid",
+
+		MaintenanceInfoVersion:     "fake-version",
+		PlanMaintenanceInfoVersion: "fake-plan-version",
+
+		UpgradeAvailable: upgradeAvailable,
+		LastOperation: ccapi.LastOperation{
+			Type:  lastOperationType,
+			State: lastOperationState,
+		},
+		Included: ccapi.EmbeddedInclude{
+			Plan: ccapi.IncludedPlan{
+				Name:                "fake-plan-name",
+				GUID:                "fake-plan-guid",
+				ServiceOfferingGUID: "fake-soffer-guid",
+			},
+			ServiceOffering: ccapi.ServiceOffering{
+				Name: "fake-soffer-name",
+				GUID: "fake-soffer-guid",
+			},
+			Space: ccapi.Space{
+				Name:             "fake-space-name",
+				GUID:             "fake-space-guid",
+				OrganizationGUID: "fake-org-guid",
+			},
+			Organization: ccapi.Organization{
+				Name: "fake-org-name",
+				GUID: "fake-org-guid",
+			},
+		},
+	}
+}
 
 var captureStdoutLock sync.Mutex
 

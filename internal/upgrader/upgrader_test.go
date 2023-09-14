@@ -2,8 +2,13 @@ package upgrader_test
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"sync"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
+	"upgrade-all-services-cli-plugin/internal/logger"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 	"upgrade-all-services-cli-plugin/internal/upgrader/upgraderfakes"
 
@@ -120,13 +125,12 @@ var _ = Describe("Upgrade", func() {
 
 	When("performing a dry run", func() {
 		It("should print out service GUIDs and not attempt to upgrade", func() {
-			var lines []string
-			fakeLog.PrintfStub = func(format string, a ...any) {
-				lines = append(lines, fmt.Sprintf(format, a...))
-			}
-
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, fakeLog)
-			Expect(err).NotTo(HaveOccurred())
+			result := captureStdout(func() {
+				l := logger.New(100 * time.Millisecond)
+				defer l.Cleanup()
+				err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, l)
+				Expect(err).NotTo(HaveOccurred())
+			})
 
 			By("getting the service plans")
 			Expect(fakeCFClient.GetServicePlansCallCount()).To(Equal(1))
@@ -140,12 +144,10 @@ var _ = Describe("Upgrade", func() {
 			Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
 
 			By("printing the GUIDs")
-			Expect(lines).To(ContainElements(
-				fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName),
-				"the following service instances would be upgraded:",
-				fmt.Sprintf(" - %s", fakeInstance1.GUID),
-				fmt.Sprintf(" - %s", fakeInstance2.GUID),
-			))
+			Expect(result).To(ContainSubstring(fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName)))
+			Expect(result).To(ContainSubstring("the following service instances would be upgraded:"))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance1.GUID)))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance2.GUID)))
 		})
 	})
 
@@ -231,3 +233,28 @@ var _ = Describe("Upgrade", func() {
 		})
 	})
 })
+
+var captureStdoutLock sync.Mutex
+
+func captureStdout(callback func()) (result string) {
+	captureStdoutLock.Lock()
+
+	reader, writer, err := os.Pipe()
+	Expect(err).NotTo(HaveOccurred())
+
+	originalStdout := os.Stdout
+	os.Stdout = writer
+
+	defer func() {
+		writer.Close()
+		os.Stdout = originalStdout
+		captureStdoutLock.Unlock()
+
+		data, err := io.ReadAll(reader)
+		Expect(err).NotTo(HaveOccurred())
+		result = string(data)
+	}()
+
+	callback()
+	return
+}

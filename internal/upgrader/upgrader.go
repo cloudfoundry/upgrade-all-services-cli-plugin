@@ -35,6 +35,12 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 
 	log.Printf("discovering service instances for broker: %s", brokerName)
 	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions), log)
+
+	// See internal/ccapi/service_instances.go to understand why we are setting this value here
+	for i := range upgradableInstances {
+		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].PlanGUID]
+	}
+
 	switch {
 	case err != nil:
 		return err
@@ -42,6 +48,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 		log.Printf("no instances available to upgrade")
 		return nil
 	case dryRun:
+		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
 	default:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
@@ -91,8 +98,9 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
 	log.Printf("the following service instances would be upgraded:")
 	for _, i := range upgradableInstances {
-		log.Printf(" - %s", i.GUID)
+		log.UpgradeFailed(i, time.Duration(0), fmt.Errorf("dry-run prevented upgrade"))
 	}
+	log.FinalTotals()
 	return nil
 }
 
