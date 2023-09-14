@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/logger"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 
@@ -15,6 +16,14 @@ import (
 )
 
 var _ upgrader.Logger = &logger.Logger{}
+
+func basicInstance(name, guid string) ccapi.ServiceInstance {
+	return ccapi.ServiceInstance{Name: name, GUID: guid}
+}
+
+func fullInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) ccapi.ServiceInstance {
+	return ccapi.ServiceInstance{Name: name, GUID: guid, UpgradeAvailable: upgradeAvailable, LastOperation: ccapi.LastOperation{Type: lastOperationType, State: lastOperationState}}
+}
 
 var _ = Describe("Logger", func() {
 	const timestampRegexp = `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)`
@@ -42,38 +51,38 @@ var _ = Describe("Logger", func() {
 
 	It("can log that it is skipping an instance", func() {
 		result := captureStdout(func() {
-			l.SkippingInstance("my-instance", "fake-guid", true, "create", "failed")
+			l.SkippingInstance(fullInstance("my-instance", "fake-guid", true, "create", "failed"))
 		})
 		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-instance" guid: "fake-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
 	})
 
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeStarting("my-instance", "fake-guid")
+			l.UpgradeStarting(basicInstance("my-instance", "fake-guid"))
 		})
 		Expect(result).To(MatchRegexp(timestampRegexp + `: starting to upgrade instance: "my-instance" guid: "fake-guid"\n`))
 	})
 
 	It("can log the success of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeSucceeded("my-instance", "fake-guid", time.Minute)
+			l.UpgradeSucceeded(basicInstance("my-instance", "fake-guid"), time.Minute)
 		})
 		Expect(result).To(MatchRegexp(timestampRegexp + `: finished upgrade of instance: "my-instance" guid: "fake-guid" successfully after 1m0s\n`))
 	})
 
 	It("can log the failure of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeFailed("my-instance", "fake-guid", time.Minute, fmt.Errorf("boom"))
+			l.UpgradeFailed(basicInstance("my-instance", "fake-guid"), time.Minute, fmt.Errorf("boom"))
 		})
 		Expect(result).To(MatchRegexp(timestampRegexp + `: upgrade of instance: "my-instance" guid: "fake-guid" failed after 1m0s: boom\n`))
 	})
 
 	It("can log the final totals", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeFailed("my-first-instance", "fake-guid-1", time.Minute, fmt.Errorf("boom"))
-		l.UpgradeFailed("my-second-instance", "fake-guid-2", time.Minute, fmt.Errorf("bang"))
-		l.UpgradeSucceeded("my-third-instance", "fake-guid-3", time.Minute)
-		l.SkippingInstance("skipped", "skipped-guid", true, "create", "failed")
+		l.UpgradeFailed(basicInstance("my-first-instance", "fake-guid-1"), time.Minute, fmt.Errorf("boom"))
+		l.UpgradeFailed(basicInstance("my-second-instance", "fake-guid-2"), time.Minute, fmt.Errorf("bang"))
+		l.UpgradeSucceeded(basicInstance("my-third-instance", "fake-guid-3"), time.Minute)
+		l.SkippingInstance(fullInstance("skipped", "skipped-guid", true, "create", "failed"))
 
 		result := captureStdout(func() {
 			l.FinalTotals()
@@ -87,8 +96,8 @@ var _ = Describe("Logger", func() {
 
 	It("logs on a ticker", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeSucceeded("fake-name", "fake-guid", time.Minute)
-		l.UpgradeSucceeded("fake-name", "fake-guid", time.Minute)
+		l.UpgradeSucceeded(basicInstance("fake-name", "fake-guid"), time.Minute)
+		l.UpgradeSucceeded(basicInstance("fake-name", "fake-guid"), time.Minute)
 
 		result := captureStdout(func() {
 			time.Sleep(150 * time.Millisecond)

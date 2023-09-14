@@ -12,11 +12,14 @@ type ServiceInstance struct {
 	Name             string `json:"name"`
 	UpgradeAvailable bool   `json:"upgrade_available"`
 	PlanGUID         string `jsonry:"relationships.service_plan.data.guid"`
-	LastOperation    struct {
-		Type        string `json:"type"`
-		State       string `json:"state"`
-		Description string `json:"description"`
-	} `json:"last_operation"`
+
+	LastOperation LastOperation `json:"last_operation"`
+}
+
+type LastOperation struct {
+	Type        string `json:"type"`
+	State       string `json:"state"`
+	Description string `json:"description"`
 }
 
 type serviceInstances struct {
