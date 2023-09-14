@@ -6,6 +6,8 @@ import (
 	"sync"
 	"text/tabwriter"
 	"time"
+
+	"upgrade-all-services-cli-plugin/internal/ccapi"
 )
 
 func New(period time.Duration) *Logger {
@@ -46,41 +48,41 @@ func (l *Logger) Printf(format string, a ...any) {
 	l.printf(format, a...)
 }
 
-func (l *Logger) SkippingInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) {
+func (l *Logger) SkippingInstance(instance ccapi.ServiceInstance) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.skipped++
-	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", name, guid, upgradeAvailable, lastOperationType, lastOperationState)
+	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperation.Type, instance.LastOperation.State)
 }
 
-func (l *Logger) UpgradeStarting(name, guid string) {
+func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.printf("starting to upgrade instance: %q guid: %q", name, guid)
+	l.printf("starting to upgrade instance: %q guid: %q", instance.Name, instance.GUID)
 }
 
-func (l *Logger) UpgradeSucceeded(name, guid string, duration time.Duration) {
+func (l *Logger) UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.successes++
 	l.complete++
-	l.printf("finished upgrade of instance: %q guid: %q successfully after %s", name, guid, duration)
+	l.printf("finished upgrade of instance: %q guid: %q successfully after %s", instance.Name, instance.GUID, duration)
 }
 
-func (l *Logger) UpgradeFailed(name, guid string, duration time.Duration, err error) {
+func (l *Logger) UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.failures = append(l.failures, failure{
-		name: name,
-		guid: guid,
+		name: instance.Name,
+		guid: instance.GUID,
 		err:  err,
 	})
 	l.complete++
-	l.printf("upgrade of instance: %q guid: %q failed after %s: %s", name, guid, duration, err)
+	l.printf("upgrade of instance: %q guid: %q failed after %s: %s", instance.Name, instance.GUID, duration, err)
 }
 
 func (l *Logger) InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int) {
