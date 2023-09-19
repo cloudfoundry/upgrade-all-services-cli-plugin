@@ -2,8 +2,13 @@ package upgrader_test
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"sync"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
+	"upgrade-all-services-cli-plugin/internal/logger"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 	"upgrade-all-services-cli-plugin/internal/upgrader/upgraderfakes"
 
@@ -98,20 +103,20 @@ var _ = Describe("Upgrade", func() {
 		Expect(actualUpgradable).To(Equal(2))
 
 		Expect(fakeLog.SkippingInstanceCallCount()).To(Equal(1))
-		nameSkipped, guidSkipped, upgradeAvailable, lastOperation, lastOperationStatus := fakeLog.SkippingInstanceArgsForCall(0)
-		Expect(nameSkipped).To(Equal("fake-instance-create-failed"))
-		Expect(guidSkipped).To(Equal("fake-instance-create-failed-GUID"))
-		Expect(upgradeAvailable).To(BeTrue())
-		Expect(lastOperation).To(Equal("create"))
-		Expect(lastOperationStatus).To(Equal("failed"))
+		instanceSkipped := fakeLog.SkippingInstanceArgsForCall(0)
+		Expect(instanceSkipped.Name).To(Equal("fake-instance-create-failed"))
+		Expect(instanceSkipped.GUID).To(Equal("fake-instance-create-failed-GUID"))
+		Expect(instanceSkipped.UpgradeAvailable).To(BeTrue())
+		Expect(instanceSkipped.LastOperation.Type).To(Equal("create"))
+		Expect(instanceSkipped.LastOperation.State).To(Equal("failed"))
 
 		Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
-		name1, guid1 := fakeLog.UpgradeStartingArgsForCall(0)
-		Expect(name1).To(Equal("fake-instance-name-1"))
-		Expect(guid1).To(Equal("fake-instance-guid-1"))
-		name2, guid2 := fakeLog.UpgradeStartingArgsForCall(1)
-		Expect(name2).To(Equal("fake-instance-name-2"))
-		Expect(guid2).To(Equal("fake-instance-guid-2"))
+		instance1 := fakeLog.UpgradeStartingArgsForCall(0)
+		Expect(instance1.Name).To(Equal("fake-instance-name-1"))
+		Expect(instance1.GUID).To(Equal("fake-instance-guid-1"))
+		instance2 := fakeLog.UpgradeStartingArgsForCall(1)
+		Expect(instance2.Name).To(Equal("fake-instance-name-2"))
+		Expect(instance2.GUID).To(Equal("fake-instance-guid-2"))
 
 		Expect(fakeLog.UpgradeSucceededCallCount()).To(Equal(2))
 		Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
@@ -120,13 +125,12 @@ var _ = Describe("Upgrade", func() {
 
 	When("performing a dry run", func() {
 		It("should print out service GUIDs and not attempt to upgrade", func() {
-			var lines []string
-			fakeLog.PrintfStub = func(format string, a ...any) {
-				lines = append(lines, fmt.Sprintf(format, a...))
-			}
-
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, fakeLog)
-			Expect(err).NotTo(HaveOccurred())
+			result := captureStdout(func() {
+				l := logger.New(100 * time.Millisecond)
+				defer l.Cleanup()
+				err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, l)
+				Expect(err).NotTo(HaveOccurred())
+			})
 
 			By("getting the service plans")
 			Expect(fakeCFClient.GetServicePlansCallCount()).To(Equal(1))
@@ -140,12 +144,10 @@ var _ = Describe("Upgrade", func() {
 			Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
 
 			By("printing the GUIDs")
-			Expect(lines).To(ContainElements(
-				fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName),
-				"the following service instances would be upgraded:",
-				fmt.Sprintf(" - %s", fakeInstance1.GUID),
-				fmt.Sprintf(" - %s", fakeInstance2.GUID),
-			))
+			Expect(result).To(ContainSubstring(fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName)))
+			Expect(result).To(ContainSubstring("the following service instances would be upgraded:"))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance1.GUID)))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance2.GUID)))
 		})
 	})
 
@@ -218,12 +220,12 @@ var _ = Describe("Upgrade", func() {
 			Expect(actualUpgradable).To(Equal(2))
 
 			Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(2))
-			name1, guid1 := fakeLog.UpgradeStartingArgsForCall(0)
-			Expect(name1).To(Equal("fake-instance-name-1"))
-			Expect(guid1).To(Equal("fake-instance-guid-1"))
-			name2, guid2 := fakeLog.UpgradeStartingArgsForCall(1)
-			Expect(name2).To(Equal("fake-instance-name-2"))
-			Expect(guid2).To(Equal("fake-instance-guid-2"))
+			instance1 := fakeLog.UpgradeStartingArgsForCall(0)
+			Expect(instance1.Name).To(Equal("fake-instance-name-1"))
+			Expect(instance1.GUID).To(Equal("fake-instance-guid-1"))
+			instance2 := fakeLog.UpgradeStartingArgsForCall(1)
+			Expect(instance2.Name).To(Equal("fake-instance-name-2"))
+			Expect(instance2.GUID).To(Equal("fake-instance-guid-2"))
 
 			Expect(fakeLog.UpgradeSucceededCallCount()).To(Equal(1))
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(1))
@@ -231,3 +233,28 @@ var _ = Describe("Upgrade", func() {
 		})
 	})
 })
+
+var captureStdoutLock sync.Mutex
+
+func captureStdout(callback func()) (result string) {
+	captureStdoutLock.Lock()
+
+	reader, writer, err := os.Pipe()
+	Expect(err).NotTo(HaveOccurred())
+
+	originalStdout := os.Stdout
+	os.Stdout = writer
+
+	defer func() {
+		writer.Close()
+		os.Stdout = originalStdout
+		captureStdoutLock.Unlock()
+
+		data, err := io.ReadAll(reader)
+		Expect(err).NotTo(HaveOccurred())
+		result = string(data)
+	}()
+
+	callback()
+	return
+}

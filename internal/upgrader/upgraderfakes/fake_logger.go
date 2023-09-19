@@ -4,6 +4,7 @@ package upgraderfakes
 import (
 	"sync"
 	"time"
+	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 )
 
@@ -24,35 +25,28 @@ type FakeLogger struct {
 		arg1 string
 		arg2 []any
 	}
-	SkippingInstanceStub        func(string, string, bool, string, string)
+	SkippingInstanceStub        func(ccapi.ServiceInstance)
 	skippingInstanceMutex       sync.RWMutex
 	skippingInstanceArgsForCall []struct {
-		arg1 string
-		arg2 string
-		arg3 bool
-		arg4 string
-		arg5 string
+		arg1 ccapi.ServiceInstance
 	}
-	UpgradeFailedStub        func(string, string, time.Duration, error)
+	UpgradeFailedStub        func(ccapi.ServiceInstance, time.Duration, error)
 	upgradeFailedMutex       sync.RWMutex
 	upgradeFailedArgsForCall []struct {
-		arg1 string
-		arg2 string
-		arg3 time.Duration
-		arg4 error
+		arg1 ccapi.ServiceInstance
+		arg2 time.Duration
+		arg3 error
 	}
-	UpgradeStartingStub        func(string, string)
+	UpgradeStartingStub        func(ccapi.ServiceInstance)
 	upgradeStartingMutex       sync.RWMutex
 	upgradeStartingArgsForCall []struct {
-		arg1 string
-		arg2 string
+		arg1 ccapi.ServiceInstance
 	}
-	UpgradeSucceededStub        func(string, string, time.Duration)
+	UpgradeSucceededStub        func(ccapi.ServiceInstance, time.Duration)
 	upgradeSucceededMutex       sync.RWMutex
 	upgradeSucceededArgsForCall []struct {
-		arg1 string
-		arg2 string
-		arg3 time.Duration
+		arg1 ccapi.ServiceInstance
+		arg2 time.Duration
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -148,20 +142,16 @@ func (fake *FakeLogger) PrintfArgsForCall(i int) (string, []any) {
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeLogger) SkippingInstance(arg1 string, arg2 string, arg3 bool, arg4 string, arg5 string) {
+func (fake *FakeLogger) SkippingInstance(arg1 ccapi.ServiceInstance) {
 	fake.skippingInstanceMutex.Lock()
 	fake.skippingInstanceArgsForCall = append(fake.skippingInstanceArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 bool
-		arg4 string
-		arg5 string
-	}{arg1, arg2, arg3, arg4, arg5})
+		arg1 ccapi.ServiceInstance
+	}{arg1})
 	stub := fake.SkippingInstanceStub
-	fake.recordInvocation("SkippingInstance", []interface{}{arg1, arg2, arg3, arg4, arg5})
+	fake.recordInvocation("SkippingInstance", []interface{}{arg1})
 	fake.skippingInstanceMutex.Unlock()
 	if stub != nil {
-		fake.SkippingInstanceStub(arg1, arg2, arg3, arg4, arg5)
+		fake.SkippingInstanceStub(arg1)
 	}
 }
 
@@ -171,32 +161,31 @@ func (fake *FakeLogger) SkippingInstanceCallCount() int {
 	return len(fake.skippingInstanceArgsForCall)
 }
 
-func (fake *FakeLogger) SkippingInstanceCalls(stub func(string, string, bool, string, string)) {
+func (fake *FakeLogger) SkippingInstanceCalls(stub func(ccapi.ServiceInstance)) {
 	fake.skippingInstanceMutex.Lock()
 	defer fake.skippingInstanceMutex.Unlock()
 	fake.SkippingInstanceStub = stub
 }
 
-func (fake *FakeLogger) SkippingInstanceArgsForCall(i int) (string, string, bool, string, string) {
+func (fake *FakeLogger) SkippingInstanceArgsForCall(i int) ccapi.ServiceInstance {
 	fake.skippingInstanceMutex.RLock()
 	defer fake.skippingInstanceMutex.RUnlock()
 	argsForCall := fake.skippingInstanceArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+	return argsForCall.arg1
 }
 
-func (fake *FakeLogger) UpgradeFailed(arg1 string, arg2 string, arg3 time.Duration, arg4 error) {
+func (fake *FakeLogger) UpgradeFailed(arg1 ccapi.ServiceInstance, arg2 time.Duration, arg3 error) {
 	fake.upgradeFailedMutex.Lock()
 	fake.upgradeFailedArgsForCall = append(fake.upgradeFailedArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 time.Duration
-		arg4 error
-	}{arg1, arg2, arg3, arg4})
+		arg1 ccapi.ServiceInstance
+		arg2 time.Duration
+		arg3 error
+	}{arg1, arg2, arg3})
 	stub := fake.UpgradeFailedStub
-	fake.recordInvocation("UpgradeFailed", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("UpgradeFailed", []interface{}{arg1, arg2, arg3})
 	fake.upgradeFailedMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeFailedStub(arg1, arg2, arg3, arg4)
+		fake.UpgradeFailedStub(arg1, arg2, arg3)
 	}
 }
 
@@ -206,30 +195,29 @@ func (fake *FakeLogger) UpgradeFailedCallCount() int {
 	return len(fake.upgradeFailedArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeFailedCalls(stub func(string, string, time.Duration, error)) {
+func (fake *FakeLogger) UpgradeFailedCalls(stub func(ccapi.ServiceInstance, time.Duration, error)) {
 	fake.upgradeFailedMutex.Lock()
 	defer fake.upgradeFailedMutex.Unlock()
 	fake.UpgradeFailedStub = stub
 }
 
-func (fake *FakeLogger) UpgradeFailedArgsForCall(i int) (string, string, time.Duration, error) {
+func (fake *FakeLogger) UpgradeFailedArgsForCall(i int) (ccapi.ServiceInstance, time.Duration, error) {
 	fake.upgradeFailedMutex.RLock()
 	defer fake.upgradeFailedMutex.RUnlock()
 	argsForCall := fake.upgradeFailedArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeLogger) UpgradeStarting(arg1 string, arg2 string) {
+func (fake *FakeLogger) UpgradeStarting(arg1 ccapi.ServiceInstance) {
 	fake.upgradeStartingMutex.Lock()
 	fake.upgradeStartingArgsForCall = append(fake.upgradeStartingArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
+		arg1 ccapi.ServiceInstance
+	}{arg1})
 	stub := fake.UpgradeStartingStub
-	fake.recordInvocation("UpgradeStarting", []interface{}{arg1, arg2})
+	fake.recordInvocation("UpgradeStarting", []interface{}{arg1})
 	fake.upgradeStartingMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeStartingStub(arg1, arg2)
+		fake.UpgradeStartingStub(arg1)
 	}
 }
 
@@ -239,31 +227,30 @@ func (fake *FakeLogger) UpgradeStartingCallCount() int {
 	return len(fake.upgradeStartingArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeStartingCalls(stub func(string, string)) {
+func (fake *FakeLogger) UpgradeStartingCalls(stub func(ccapi.ServiceInstance)) {
 	fake.upgradeStartingMutex.Lock()
 	defer fake.upgradeStartingMutex.Unlock()
 	fake.UpgradeStartingStub = stub
 }
 
-func (fake *FakeLogger) UpgradeStartingArgsForCall(i int) (string, string) {
+func (fake *FakeLogger) UpgradeStartingArgsForCall(i int) ccapi.ServiceInstance {
 	fake.upgradeStartingMutex.RLock()
 	defer fake.upgradeStartingMutex.RUnlock()
 	argsForCall := fake.upgradeStartingArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1
 }
 
-func (fake *FakeLogger) UpgradeSucceeded(arg1 string, arg2 string, arg3 time.Duration) {
+func (fake *FakeLogger) UpgradeSucceeded(arg1 ccapi.ServiceInstance, arg2 time.Duration) {
 	fake.upgradeSucceededMutex.Lock()
 	fake.upgradeSucceededArgsForCall = append(fake.upgradeSucceededArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 time.Duration
-	}{arg1, arg2, arg3})
+		arg1 ccapi.ServiceInstance
+		arg2 time.Duration
+	}{arg1, arg2})
 	stub := fake.UpgradeSucceededStub
-	fake.recordInvocation("UpgradeSucceeded", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("UpgradeSucceeded", []interface{}{arg1, arg2})
 	fake.upgradeSucceededMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeSucceededStub(arg1, arg2, arg3)
+		fake.UpgradeSucceededStub(arg1, arg2)
 	}
 }
 
@@ -273,17 +260,17 @@ func (fake *FakeLogger) UpgradeSucceededCallCount() int {
 	return len(fake.upgradeSucceededArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeSucceededCalls(stub func(string, string, time.Duration)) {
+func (fake *FakeLogger) UpgradeSucceededCalls(stub func(ccapi.ServiceInstance, time.Duration)) {
 	fake.upgradeSucceededMutex.Lock()
 	defer fake.upgradeSucceededMutex.Unlock()
 	fake.UpgradeSucceededStub = stub
 }
 
-func (fake *FakeLogger) UpgradeSucceededArgsForCall(i int) (string, string, time.Duration) {
+func (fake *FakeLogger) UpgradeSucceededArgsForCall(i int) (ccapi.ServiceInstance, time.Duration) {
 	fake.upgradeSucceededMutex.RLock()
 	defer fake.upgradeSucceededMutex.RUnlock()
 	argsForCall := fake.upgradeSucceededArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeLogger) Invocations() map[string][][]interface{} {

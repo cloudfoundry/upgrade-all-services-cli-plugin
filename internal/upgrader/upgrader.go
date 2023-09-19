@@ -19,10 +19,10 @@ type CFClient interface {
 //counterfeiter:generate . Logger
 type Logger interface {
 	Printf(format string, a ...any)
-	SkippingInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string)
-	UpgradeStarting(name, guid string)
-	UpgradeSucceeded(name, guid string, duration time.Duration)
-	UpgradeFailed(name, guid string, duration time.Duration, err error)
+	SkippingInstance(instance ccapi.ServiceInstance)
+	UpgradeStarting(instance ccapi.ServiceInstance)
+	UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration)
+	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
@@ -35,6 +35,12 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 
 	log.Printf("discovering service instances for broker: %s", brokerName)
 	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions), log)
+
+	// See internal/ccapi/service_instances.go to understand why we are setting this value here
+	for i := range upgradableInstances {
+		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].PlanGUID]
+	}
+
 	switch {
 	case err != nil:
 		return err
@@ -42,6 +48,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 		log.Printf("no instances available to upgrade")
 		return nil
 	case dryRun:
+		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
 	default:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
@@ -51,6 +58,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 
 func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, planVersions map[string]string, parallelUpgrades int, log Logger) error {
 	type upgradeTask struct {
+		UpgradeableIndex       int
 		ServiceInstanceName    string
 		ServiceInstanceGUID    string
 		MaintenanceInfoVersion string
@@ -58,8 +66,9 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 
 	upgradeQueue := make(chan upgradeTask)
 	go func() {
-		for _, instance := range upgradableInstances {
+		for i, instance := range upgradableInstances {
 			upgradeQueue <- upgradeTask{
+				UpgradeableIndex:       i,
 				ServiceInstanceName:    instance.Name,
 				ServiceInstanceGUID:    instance.GUID,
 				MaintenanceInfoVersion: planVersions[instance.PlanGUID],
@@ -71,13 +80,13 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
 			start := time.Now()
-			log.UpgradeStarting(instance.ServiceInstanceName, instance.ServiceInstanceGUID)
+			log.UpgradeStarting(upgradableInstances[instance.UpgradeableIndex])
 			err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
 			switch err {
 			case nil:
-				log.UpgradeSucceeded(instance.ServiceInstanceName, instance.ServiceInstanceGUID, time.Since(start))
+				log.UpgradeSucceeded(upgradableInstances[instance.UpgradeableIndex], time.Since(start))
 			default:
-				log.UpgradeFailed(instance.ServiceInstanceName, instance.ServiceInstanceGUID, time.Since(start), err)
+				log.UpgradeFailed(upgradableInstances[instance.UpgradeableIndex], time.Since(start), err)
 			}
 		}
 	})
@@ -89,8 +98,9 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
 	log.Printf("the following service instances would be upgraded:")
 	for _, i := range upgradableInstances {
-		log.Printf(" - %s", i.GUID)
+		log.UpgradeFailed(i, time.Duration(0), fmt.Errorf("dry-run prevented upgrade"))
 	}
+	log.FinalTotals()
 	return nil
 }
 
@@ -122,7 +132,7 @@ func discoverUpgradeableInstances(api CFClient, planGUIDs []string, log Logger) 
 	var upgradableInstances []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
 		if i.UpgradeAvailable && isCreateFailed(i.LastOperation.Type, i.LastOperation.State) {
-			log.SkippingInstance(i.Name, i.GUID, i.UpgradeAvailable, i.LastOperation.Type, i.LastOperation.State)
+			log.SkippingInstance(i)
 		} else if i.UpgradeAvailable {
 			upgradableInstances = append(upgradableInstances, i)
 		}

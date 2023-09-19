@@ -56,7 +56,7 @@ var _ = Describe("GetServiceInstances", func() {
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
-					ghttp.VerifyRequest("GET", "/v3/service_instances", "per_page=5000&service_plan_guids=test-plan-guid,another-test-guid"),
+					ghttp.VerifyRequest("GET", "/v3/service_instances", ccapi.BuildQueryParams([]string{"test-plan-guid", "another-test-guid"})),
 					ghttp.RespondWith(http.StatusOK, responseServiceInstances),
 				),
 			)
@@ -81,7 +81,7 @@ var _ = Describe("GetServiceInstances", func() {
 			By("making the appending the plan guids")
 			Expect(requests[0].Method).To(Equal("GET"))
 			Expect(requests[0].URL.Path).To(Equal("/v3/service_instances"))
-			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&service_plan_guids=test-plan-guid,another-test-guid"))
+			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&fields[service_plan]=name,guid,relationships.service_offering&fields[service_plan.service_offering]=guid,name&service_plan_guids=test-plan-guid,another-test-guid"))
 		})
 	})
 
