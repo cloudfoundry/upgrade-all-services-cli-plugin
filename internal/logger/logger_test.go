@@ -71,8 +71,8 @@ var _ = Describe("Logger", func() {
 
 	It("can log the final totals", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeFailed(basicInstance("my-first-instance", "fake-guid-1"), time.Minute, fmt.Errorf("boom"))
-		l.UpgradeFailed(basicInstance("my-second-instance", "fake-guid-2"), time.Minute, fmt.Errorf("bang"))
+		l.UpgradeFailed(fullInstance("my-first-instance", "fake-guid-1", true, "fake-op-type1", "fake-op-state1"), time.Minute, fmt.Errorf("boom"))
+		l.UpgradeFailed(fullInstance("my-second-instance", "fake-guid-2", true, "fake-op-type2", "fake-op-state2"), time.Minute, fmt.Errorf("bang"))
 		l.UpgradeSucceeded(basicInstance("my-third-instance", "fake-guid-3"), time.Minute)
 		l.SkippingInstance(fullInstance("skipped", "skipped-guid", true, "create", "failed"))
 
