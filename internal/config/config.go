@@ -27,6 +27,10 @@ const (
 	dryRunDefault     = false
 	dryRunFlag        = "dry-run"
 	dryRunDescription = "print the service instances that would be upgraded"
+
+	checkUpToDateDefault     = false
+	checkUpToDateFlag        = "check-up-to-date"
+	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date - implies a dry-run"
 )
 
 func ParseConfig(conn CLIConnection, args []string) (Config, error) {
@@ -36,6 +40,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
+	flagSet.BoolVar(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
 
 	for _, s := range []func() error{
 		func() error {
@@ -78,6 +83,7 @@ type Config struct {
 	SkipSSLValidation bool
 	HTTPLogging       bool
 	DryRun            bool
+	CheckUpToDate     bool
 	ParallelUpgrades  int
 }
 
@@ -96,6 +102,8 @@ func Options() map[string]string {
 		parallelFlag:    parallelDescription,
 		httpLoggingFlag: httpLoggingDescription,
 		dryRunFlag:      dryRunDescription,
+
+		checkUpToDateFlag: checkUpToDateDescription,
 	}
 }
 
