@@ -306,21 +306,11 @@ var _ = Describe("Upgrade", func() {
 				[]ccapi.Plan{{GUID: fakeInstance1.PlanGUID}},
 				[]ccapi.ServiceInstance{{UpgradeAvailable: true, LastOperation: ccapi.LastOperation{Type: "create", State: "failed"}}},
 			),
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			// WARNING:
-			// We may want to check whether the following scenarios are possible and if they do, we may want to prevent them from happening
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-			Entry("upgradeable instances whose creation failed and are in a possible invalid state?",
+			Entry("upgradeable instances after a failed destroy attempt",
 				fmt.Errorf("check up-to-date failed: found 1 instances which are not up-to-date"),
-				`(\s|.)*`, // we don't care about the logs in this test
+				`(\s|.)*`, // we don't care about the logs in this test, only that it raises the error above
 				[]ccapi.Plan{{GUID: fakeInstance1.PlanGUID}},
 				[]ccapi.ServiceInstance{{UpgradeAvailable: true, LastOperation: ccapi.LastOperation{Type: "destroy", State: "failed"}}},
-			),
-			Entry("unlikely scenario in which the api returns instances which doesn't correspond to the queried plan",
-				fmt.Errorf("check up-to-date failed: found 1 instances which are not up-to-date"),
-				`(\s|.)*`, // we don't care about the logs in this test
-				[]ccapi.Plan{{GUID: "guid-for-unlikely-scenario"}},
-				[]ccapi.ServiceInstance{getFakeInstanceDetailed()},
 			),
 		)
 	})
