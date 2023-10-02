@@ -74,7 +74,7 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("upgrades a service instance", func() {
-		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
+		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, false, fakeLog)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("getting the service plans")
@@ -94,7 +94,7 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("should pass the correct information to the logger", func() {
-		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
+		err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
@@ -128,7 +128,7 @@ var _ = Describe("Upgrade", func() {
 			result := captureStdout(func() {
 				l := logger.New(100 * time.Millisecond)
 				defer l.Cleanup()
-				err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, l)
+				err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, true, false, l)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -155,14 +155,14 @@ var _ = Describe("Upgrade", func() {
 		It("returns error stating no plans available", func() {
 			fakeCFClient.GetServicePlansReturns([]ccapi.Plan{}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 			Expect(err).To(MatchError(fmt.Sprintf("no service plans available for broker: %s", fakeBrokerName)))
 		})
 	})
 
 	When("number of parallel upgrades is less that number of upgradable instances", func() {
 		It("upgrades all instances", func() {
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("calling upgrade on each upgradeable instance")
@@ -178,7 +178,7 @@ var _ = Describe("Upgrade", func() {
 		It("should succeed and pass the correct information to the logger", func() {
 			fakeCFClient.GetServiceInstancesReturns([]ccapi.ServiceInstance{}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLog.PrintfCallCount()).To(Equal(2))
@@ -190,7 +190,7 @@ var _ = Describe("Upgrade", func() {
 		It("returns the error", func() {
 			fakeCFClient.GetServicePlansReturns(nil, fmt.Errorf("plan-error"))
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, false, fakeLog)
 			Expect(err).To(MatchError("plan-error"))
 		})
 	})
@@ -199,7 +199,7 @@ var _ = Describe("Upgrade", func() {
 		It("returns the error", func() {
 			fakeCFClient.GetServiceInstancesReturns(nil, fmt.Errorf("instance-error"))
 
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 5, false, false, fakeLog)
 			Expect(err).To(MatchError("instance-error"))
 		})
 	})
@@ -211,7 +211,7 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		It("should pass the correct information to the logger", func() {
-			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, fakeLog)
+			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
@@ -231,6 +231,88 @@ var _ = Describe("Upgrade", func() {
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(1))
 			Expect(fakeLog.FinalTotalsCallCount()).To(Equal(1))
 		})
+	})
+
+	Context("checkUpToDate: true", func() {
+		DescribeTable("expected behaviour of Upgrade when CheckUpToDate is enabled",
+			func(expectedErr error, expectedLog string, fakePlans []ccapi.Plan, fakeInstances []ccapi.ServiceInstance) {
+				passedDryRun := true
+				fakeCFClient.GetServicePlansReturns(fakePlans, nil)
+				fakeCFClient.GetServiceInstancesReturns(fakeInstances, nil)
+
+				var upgradeErr error
+				upgradeLog := captureStdout(func() {
+					l := logger.New(100 * time.Millisecond)
+					defer l.Cleanup()
+					upgradeErr = upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, passedDryRun, true, l)
+					// Under no circumstances we want an actual upgrade to be scheduled
+					Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
+				})
+
+				// When `checkUpToDate: true` it takes precedence and the actual value of dryRun should be` irrelevant and lead to the exact same results
+				var upgradeErr2 error
+				upgradeLog2 := captureStdout(func() {
+					l := logger.New(100 * time.Millisecond)
+					defer l.Cleanup()
+					upgradeErr2 = upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, !passedDryRun, true, l)
+					// Under no circumstances we want an actual upgrade to be scheduled
+					Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
+				})
+
+				if expectedErr == nil {
+					Expect(upgradeErr).NotTo(HaveOccurred())
+					Expect(upgradeErr2).NotTo(HaveOccurred())
+				} else {
+					Expect(upgradeErr).To(Equal(expectedErr))
+					Expect(upgradeErr2).To(Equal(expectedErr))
+				}
+				if expectedLog == "" {
+					Expect(upgradeLog).To(Equal(""))
+					Expect(upgradeLog2).To(Equal(""))
+				} else {
+					Expect(upgradeLog).To(MatchRegexp(expectedLog))
+					Expect(upgradeLog2).To(MatchRegexp(expectedLog))
+				}
+			},
+			Entry("no plans defined",
+				fmt.Errorf("no service plans available for broker: fake-broker-name"), "",
+				[]ccapi.Plan{},
+				[]ccapi.ServiceInstance{},
+			),
+			Entry("no instances defined",
+				nil, "no instances available to upgrade",
+				[]ccapi.Plan{fakePlan},
+				[]ccapi.ServiceInstance{},
+			),
+			Entry("all instances up to date",
+				nil, "no instances available to upgrade",
+				[]ccapi.Plan{fakePlan},
+				[]ccapi.ServiceInstance{{UpgradeAvailable: false}},
+			),
+			Entry("upgradable instances",
+				fmt.Errorf("check up-to-date failed: found 1 instances which are not up-to-date"),
+				`(\s|.)*`, // we don't care about the logs in this test
+				[]ccapi.Plan{fakePlan},
+				[]ccapi.ServiceInstance{{UpgradeAvailable: true}},
+			),
+			Entry("upgradable instances detailed logs",
+				fmt.Errorf("check up-to-date failed: found 1 instances which are not up-to-date"),
+				getExpectedLogForInstance(getFakeInstanceDetailed()),
+				[]ccapi.Plan{{GUID: getFakeInstanceDetailed().PlanGUID, MaintenanceInfoVersion: getFakeInstanceDetailed().PlanMaintenanceInfoVersion}},
+				[]ccapi.ServiceInstance{getFakeInstanceDetailed()},
+			),
+			Entry("upgradeable instances whose creation failed",
+				nil, "no instances available to upgrade",
+				[]ccapi.Plan{{GUID: fakeInstance1.PlanGUID}},
+				[]ccapi.ServiceInstance{{UpgradeAvailable: true, LastOperation: ccapi.LastOperation{Type: "create", State: "failed"}}},
+			),
+			Entry("upgradeable instances after a failed destroy attempt",
+				fmt.Errorf("check up-to-date failed: found 1 instances which are not up-to-date"),
+				`(\s|.)*`, // we don't care about the logs in this test, only that it raises the error above
+				[]ccapi.Plan{{GUID: fakeInstance1.PlanGUID}},
+				[]ccapi.ServiceInstance{{UpgradeAvailable: true, LastOperation: ccapi.LastOperation{Type: "destroy", State: "failed"}}},
+			),
+		)
 	})
 })
 
@@ -257,4 +339,56 @@ func captureStdout(callback func()) (result string) {
 
 	callback()
 	return
+}
+
+func getFakeInstanceDetailed() ccapi.ServiceInstance {
+	return ccapi.ServiceInstance{
+		UpgradeAvailable:           true,
+		Name:                       "fakeName",
+		GUID:                       "fakeGUID",
+		MaintenanceInfoVersion:     "fakeMaintenanceInfoVersion",
+		PlanGUID:                   "fakePlanGUID",
+		PlanMaintenanceInfoVersion: "fakePlanMaintenanceInfoVersion",
+		LastOperation: ccapi.LastOperation{
+			Type:  "fakeType",
+			State: "fakeState",
+		},
+
+		Included: ccapi.EmbeddedInclude{
+			Organization: ccapi.Organization{
+				Name: "fakeOrgName",
+				GUID: "fakeOrgGUID",
+			},
+			Space: ccapi.Space{
+				Name: "fakseSpaceName",
+				GUID: "fakeSpaceGUID",
+			},
+			Plan: ccapi.IncludedPlan{
+				Name: "fakePlanName",
+				GUID: "fakePlanGUID",
+			},
+			ServiceOffering: ccapi.ServiceOffering{
+				Name: "fakeServiceOfferingName",
+				GUID: "fakeServiceOfferingGUID",
+			},
+		},
+	}
+}
+
+func getExpectedLogForInstance(i ccapi.ServiceInstance) string {
+	return `(\s|.)*total instances: 1` +
+		`(\s|.)*upgradable instances: 1` +
+		`(\s|.)*Service Instance Name: "` + i.Name +
+		`(\s|.)*Service Instance GUID: "` + i.GUID +
+		`(\s|.)*Service Version: "` + i.MaintenanceInfoVersion +
+		`(\s|.)*Details: "dry-run prevented upgrade"` +
+		`(\s|.)*Org Name: "` + i.Included.Organization.Name +
+		`(\s|.)*Org GUID: "` + i.Included.Organization.GUID +
+		`(\s|.)*Space Name: "` + i.Included.Space.Name +
+		`(\s|.)*Space GUID: "` + i.Included.Space.GUID +
+		`(\s|.)*Plan Name: "` + i.Included.Plan.Name +
+		`(\s|.)*Plan GUID: "` + i.Included.Plan.GUID +
+		`(\s|.)*Plan Version: "` + i.PlanMaintenanceInfoVersion +
+		`(\s|.)*Service Offering Name: "` + i.Included.ServiceOffering.Name +
+		`(\s|.)*Service Offering GUID: "` + i.Included.ServiceOffering.GUID
 }

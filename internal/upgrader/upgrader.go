@@ -27,7 +27,7 @@ type Logger interface {
 	FinalTotals()
 }
 
-func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool, log Logger) error {
+func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun, checkUpToDate bool, log Logger) error {
 	planVersions, err := discoverServicePlans(api, brokerName)
 	if err != nil {
 		return err
@@ -47,6 +47,9 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool,
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
+	case checkUpToDate:
+		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
+		return performCheckUpToDate(upgradableInstances, log)
 	case dryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
@@ -92,6 +95,17 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	})
 
 	log.FinalTotals()
+	return nil
+}
+
+func performCheckUpToDate(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
+	err := performDryRun(upgradableInstances, log)
+	if err != nil {
+		return fmt.Errorf("check up-to-date failed because dry-run returned the following error: %w", err)
+	}
+	if len(upgradableInstances) > 0 {
+		return fmt.Errorf("check up-to-date failed: found %d instances which are not up-to-date", len(upgradableInstances))
+	}
 	return nil
 }
 
