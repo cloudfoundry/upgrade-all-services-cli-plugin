@@ -27,7 +27,7 @@ type Logger interface {
 	FinalTotals()
 }
 
-func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun bool, checkUpToDate bool, log Logger) error {
+func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun, checkUpToDate bool, log Logger) error {
 	planVersions, err := discoverServicePlans(api, brokerName)
 	if err != nil {
 		return err

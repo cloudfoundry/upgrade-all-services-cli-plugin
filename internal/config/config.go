@@ -99,10 +99,9 @@ type CLIConnection interface {
 
 func Options() map[string]string {
 	return map[string]string{
-		parallelFlag:    parallelDescription,
-		httpLoggingFlag: httpLoggingDescription,
-		dryRunFlag:      dryRunDescription,
-
+		parallelFlag:      parallelDescription,
+		httpLoggingFlag:   httpLoggingDescription,
+		dryRunFlag:        dryRunDescription,
 		checkUpToDateFlag: checkUpToDateDescription,
 	}
 }
