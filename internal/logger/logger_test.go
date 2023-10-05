@@ -43,38 +43,38 @@ var _ = Describe("Logger", func() {
 
 	It("can log that it is skipping an instance", func() {
 		result := captureStdout(func() {
-			l.SkippingInstance(fullInstance("my-instance", "fake-guid", true, "create", "failed"))
+			l.SkippingInstance(createFailedInstance())
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-instance" guid: "fake-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "create-failed-instance" guid: "create-failed-instance-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
 	})
 
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeStarting(basicInstance("my-instance", "fake-guid"))
+			l.UpgradeStarting(upgradeableInstance(1))
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: starting to upgrade instance: "my-instance" guid: "fake-guid"\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: starting to upgrade instance: "my-service-instance-1" guid: "my-service-instance-guid-1"\n`))
 	})
 
 	It("can log the success of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeSucceeded(basicInstance("my-instance", "fake-guid"), time.Minute)
+			l.UpgradeSucceeded(upgradeableInstance(1), time.Minute)
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: finished upgrade of instance: "my-instance" guid: "fake-guid" successfully after 1m0s\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: finished upgrade of instance: "my-service-instance-1" guid: "my-service-instance-guid-1" successfully after 1m0s\n`))
 	})
 
 	It("can log the failure of an upgrade", func() {
 		result := captureStdout(func() {
-			l.UpgradeFailed(basicInstance("my-instance", "fake-guid"), time.Minute, fmt.Errorf("boom"))
+			l.UpgradeFailed(upgradeableInstance(1), time.Minute, fmt.Errorf("boom"))
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: upgrade of instance: "my-instance" guid: "fake-guid" failed after 1m0s: boom\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: upgrade of instance: "my-service-instance-1" guid: "my-service-instance-guid-1" failed after 1m0s: boom\n`))
 	})
 
 	It("can log the final totals", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeFailed(fullInstance("my-first-instance", "fake-guid-1", true, "fake-op-type1", "fake-op-state1"), time.Minute, fmt.Errorf("boom"))
-		l.UpgradeFailed(fullInstance("my-second-instance", "fake-guid-2", true, "fake-op-type2", "fake-op-state2"), time.Minute, fmt.Errorf("bang"))
-		l.UpgradeSucceeded(basicInstance("my-third-instance", "fake-guid-3"), time.Minute)
-		l.SkippingInstance(fullInstance("skipped", "skipped-guid", true, "create", "failed"))
+		l.UpgradeFailed(upgradeableInstance(1), time.Minute, fmt.Errorf("boom"))
+		l.UpgradeFailed(upgradeableInstance(2), time.Minute, fmt.Errorf("bang"))
+		l.UpgradeSucceeded(upToDateInstance(3), time.Minute)
+		l.SkippingInstance(createFailedInstance())
 
 		result := captureStdout(func() {
 			l.FinalTotals()
@@ -82,18 +82,38 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(`: skipped 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: successfully upgraded 1 instances\n`))
 		Expect(result).To(MatchRegexp(`: failed to upgrade 2 instances\n`))
-		Expect(result).To(MatchRegexp(`Service Instance Name: "my-first-instance"\s+`))
-		Expect(result).To(MatchRegexp(`Service Instance GUID: "fake-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance Name: "my-service-instance-1"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance GUID: "my-service-instance-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Service Version: "fake-version-1"\s+`))
+		Expect(result).To(MatchRegexp(`Org Name: "fake-org-name-1"\s+`))
+		Expect(result).To(MatchRegexp(`Org GUID: "fake-org-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Space Name: "fake-space-name-1"\s+`))
+		Expect(result).To(MatchRegexp(`Space GUID: "fake-space-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Plan Name: "fake-plan-name-1"\s+`))
+		Expect(result).To(MatchRegexp(`Plan GUID: "fake-plan-guid-1"\s+`))
+		Expect(result).To(MatchRegexp(`Plan Version: "fake-plan-version-1"\s+`))
+		Expect(result).To(MatchRegexp(`Service Offering Name: "fake-soffer-name-1"\s+`))
+		Expect(result).To(MatchRegexp(`Service Offering GUID: "fake-soffer-guid-1"\s+`))
 		Expect(result).To(MatchRegexp(`Details: "boom"\n`))
-		Expect(result).To(MatchRegexp(`Service Instance Name: "my-second-instance"\s+`))
-		Expect(result).To(MatchRegexp(`Service Instance GUID: "fake-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance Name: "my-service-instance-2"\s+`))
+		Expect(result).To(MatchRegexp(`Service Instance GUID: "my-service-instance-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Service Version: "fake-version-2"\s+`))
+		Expect(result).To(MatchRegexp(`Org Name: "fake-org-name-2"\s+`))
+		Expect(result).To(MatchRegexp(`Org GUID: "fake-org-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Space Name: "fake-space-name-2"\s+`))
+		Expect(result).To(MatchRegexp(`Space GUID: "fake-space-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Plan Name: "fake-plan-name-2"\s+`))
+		Expect(result).To(MatchRegexp(`Plan GUID: "fake-plan-guid-2"\s+`))
+		Expect(result).To(MatchRegexp(`Plan Version: "fake-plan-version-2"\s+`))
+		Expect(result).To(MatchRegexp(`Service Offering Name: "fake-soffer-name-2"\s+`))
+		Expect(result).To(MatchRegexp(`Service Offering GUID: "fake-soffer-guid-2"\s+`))
 		Expect(result).To(MatchRegexp(`Details: "bang"\n`))
 	})
 
 	It("logs on a ticker", func() {
 		l.InitialTotals(10, 5)
-		l.UpgradeSucceeded(basicInstance("fake-name", "fake-guid"), time.Minute)
-		l.UpgradeSucceeded(basicInstance("fake-name", "fake-guid"), time.Minute)
+		l.UpgradeSucceeded(upgradeableInstance(1), time.Minute)
+		l.UpgradeSucceeded(upgradeableInstance(1), time.Minute)
 
 		result := captureStdout(func() {
 			time.Sleep(150 * time.Millisecond)
@@ -103,44 +123,63 @@ var _ = Describe("Logger", func() {
 	})
 })
 
-func basicInstance(name, guid string) ccapi.ServiceInstance {
-	return fullInstance(name, guid, false, "fake-op-type", "fake-op-state")
+func createFailedInstance() ccapi.ServiceInstance {
+	return ccapi.ServiceInstance{
+		Name:             "create-failed-instance",
+		GUID:             "create-failed-instance-guid",
+		UpgradeAvailable: true,
+		LastOperation: ccapi.LastOperation{
+			Type:  "create",
+			State: "failed",
+		},
+	}
 }
 
-func fullInstance(name, guid string, upgradeAvailable bool, lastOperationType, lastOperationState string) ccapi.ServiceInstance {
+func formatValue(stringID string, index int) string {
+	return fmt.Sprintf("%s-%d", stringID, index)
+}
+func upgradeableInstance(index int) ccapi.ServiceInstance {
+	return indexedInstance(index, true)
+}
+
+func upToDateInstance(index int) ccapi.ServiceInstance {
+	return indexedInstance(index, false)
+}
+
+func indexedInstance(index int, upgradeAvailable bool) ccapi.ServiceInstance {
 	return ccapi.ServiceInstance{
-		Name: name,
-		GUID: guid,
+		Name: formatValue("my-service-instance", index),
+		GUID: formatValue("my-service-instance-guid", index),
 
-		PlanGUID:  "fake-plan-guid",
-		SpaceGUID: "fake-space-guid",
+		PlanGUID:  formatValue("fake-plan-guid", index),
+		SpaceGUID: formatValue("fake-space-guid", index),
 
-		MaintenanceInfoVersion:     "fake-version",
-		PlanMaintenanceInfoVersion: "fake-plan-version",
+		MaintenanceInfoVersion:     formatValue("fake-version", index),
+		PlanMaintenanceInfoVersion: formatValue("fake-plan-version", index),
 
 		UpgradeAvailable: upgradeAvailable,
 		LastOperation: ccapi.LastOperation{
-			Type:  lastOperationType,
-			State: lastOperationState,
+			Type:  formatValue("last-operation-type", index),
+			State: formatValue("last-operation-state", index),
 		},
 		Included: ccapi.EmbeddedInclude{
 			Plan: ccapi.IncludedPlan{
-				Name:                "fake-plan-name",
-				GUID:                "fake-plan-guid",
-				ServiceOfferingGUID: "fake-soffer-guid",
+				Name:                formatValue("fake-plan-name", index),
+				GUID:                formatValue("fake-plan-guid", index),
+				ServiceOfferingGUID: formatValue("fake-soffer-guid", index),
 			},
 			ServiceOffering: ccapi.ServiceOffering{
-				Name: "fake-soffer-name",
-				GUID: "fake-soffer-guid",
+				Name: formatValue("fake-soffer-name", index),
+				GUID: formatValue("fake-soffer-guid", index),
 			},
 			Space: ccapi.Space{
-				Name:             "fake-space-name",
-				GUID:             "fake-space-guid",
-				OrganizationGUID: "fake-org-guid",
+				Name:             formatValue("fake-space-name", index),
+				GUID:             formatValue("fake-space-guid", index),
+				OrganizationGUID: formatValue("fake-org-guid", index),
 			},
 			Organization: ccapi.Organization{
-				Name: "fake-org-name",
-				GUID: "fake-org-guid",
+				Name: formatValue("fake-org-name", index),
+				GUID: formatValue("fake-org-guid", index),
 			},
 		},
 	}

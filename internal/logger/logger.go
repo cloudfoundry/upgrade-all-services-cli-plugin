@@ -2,9 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"strings"
 	"sync"
-	"text/tabwriter"
 	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
@@ -106,28 +104,6 @@ func (l *Logger) FinalTotals() {
 	l.printf("successfully upgraded %d instances", l.successes)
 
 	logRowFormatTotals(l)
-}
-
-//lint:ignore U1000 Ignore unused function temporarily for better code review
-func logOldFormatTotals(l *Logger) {
-	if len(l.failures) > 0 {
-		l.printf("failed to upgrade %d instances", len(l.failures))
-		l.printf("")
-
-		var sb strings.Builder
-		tw := tabwriter.NewWriter(&sb, 0, 0, 1, ' ', tabwriter.Debug)
-		fmt.Fprintln(tw, "Service Instance Name\tService Instance GUID\t Details")
-		fmt.Fprintln(tw, "---------------------\t---------------------\t -------")
-
-		for _, failure := range l.failures {
-			fmt.Fprintf(tw, "%s\t %s\t %s\n", failure.instance.Name, failure.instance.GUID, failure.err)
-		}
-		tw.Flush()
-
-		for _, line := range strings.Split(sb.String(), "\n") {
-			l.printf(line)
-		}
-	}
 }
 
 func logRowFormatTotals(l *Logger) {
