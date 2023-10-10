@@ -18,6 +18,15 @@ type Requester struct {
 	Logger     Logger
 }
 
+type CCApiErrors struct {
+	Errors []CCApiError
+}
+type CCApiError struct {
+	Code   int    `json:"code"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
+}
+
 func NewRequester(apiBaseURL, apiToken string, insecureSkipVerify bool) Requester {
 	return Requester{
 		APIBaseURL: apiBaseURL,
@@ -54,7 +63,7 @@ func (r Requester) Get(url string, receiver any) error {
 	if err != nil {
 		return fmt.Errorf("http request error: %s", err)
 	}
-	r.Logger.Printf("Response status %d %s", response.StatusCode, response.Status)
+	r.Logger.Printf("Response status %s", response.Status)
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("http response: %d", response.StatusCode)
 	}
@@ -94,9 +103,20 @@ func (r Requester) Patch(url string, data any) error {
 	if err != nil {
 		return fmt.Errorf("http request error: %s", err)
 	}
-	r.Logger.Printf("Response status %d %s", response.StatusCode, response.Status)
+	r.Logger.Printf("Response status %s", response.Status)
 	if response.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("http response: %d", response.StatusCode)
+		defer response.Body.Close()
+		data, err := io.ReadAll(response.Body)
+		if err != nil {
+			return fmt.Errorf("unable to read http response body error: %s", err)
+		}
+		r.Logger.Printf("Response body: %s", data)
+		receiver := CCApiErrors{}
+		err = json.Unmarshal(data, &receiver)
+		if err != nil {
+			return fmt.Errorf("http_error: %s response_body: %s", response.Status, string(data))
+		}
+		return fmt.Errorf("http_error: %s capi_error_code: %d capi_error_title: %s capi_error_detail: %s", response.Status, receiver.Errors[0].Code, receiver.Errors[0].Title, receiver.Errors[0].Detail)
 	}
 
 	return nil
