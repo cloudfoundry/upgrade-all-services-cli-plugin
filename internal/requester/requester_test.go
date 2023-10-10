@@ -112,18 +112,35 @@ var _ = Describe("Requester", func() {
 		})
 
 		When("the patch request fails", func() {
-			BeforeEach(func() {
-				fakeServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyHeaderKV("Authorization", "fake-token"),
-						ghttp.VerifyRequest("PATCH", "/test-endpoint", ""),
-						ghttp.RespondWith(http.StatusInternalServerError, ``, nil),
-					),
-				)
+			When("fails with unexpected error", func() {
+				BeforeEach(func() {
+					fakeServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+							ghttp.VerifyRequest("PATCH", "/test-endpoint", ""),
+							ghttp.RespondWith(http.StatusInternalServerError, `Some body`, nil),
+						),
+					)
+				})
+				It("returns an error", func() {
+					err := fakeRequester.Patch("test-endpoint", `data`)
+					Expect(err).To(MatchError("http_error: 500 Internal Server Error response_body: Some body"))
+				})
 			})
-			It("returns an error", func() {
-				err := fakeRequester.Patch("test-endpoint", `data`)
-				Expect(err).To(MatchError("http response: 500"))
+			When("fails with capi error", func() {
+				BeforeEach(func() {
+					fakeServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+							ghttp.VerifyRequest("PATCH", "/test-endpoint", ""),
+							ghttp.RespondWith(http.StatusInternalServerError, `{"errors": [{"code":10008, "title":"error title", "detail":"error detail"}]}`, nil),
+						),
+					)
+				})
+				It("returns an error", func() {
+					err := fakeRequester.Patch("test-endpoint", `data`)
+					Expect(err).To(MatchError("http_error: 500 Internal Server Error capi_error_code: 10008 capi_error_title: error title capi_error_detail: error detail"))
+				})
 			})
 		})
 

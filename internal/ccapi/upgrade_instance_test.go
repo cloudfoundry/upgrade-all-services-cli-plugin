@@ -142,7 +142,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		})
 		It("returns the error", func() {
 			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
-			Expect(err).To(MatchError("upgrade request error: http response: 500"))
+			Expect(err).To(MatchError("upgrade request error: http_error: 500 Internal Server Error response_body: "))
 
 			requests := fakeServer.ReceivedRequests()
 			Expect(requests).To(HaveLen(1))
