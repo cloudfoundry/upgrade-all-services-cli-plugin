@@ -142,6 +142,24 @@ var _ = Describe("Requester", func() {
 					Expect(err).To(MatchError("http_error: 500 Internal Server Error capi_error_code: 10008 capi_error_title: error title capi_error_detail: error detail"))
 				})
 			})
+
+			When("fails with multiple capi errors", func() {
+				BeforeEach(func() {
+					fakeServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+							ghttp.VerifyRequest("PATCH", "/test-endpoint", ""),
+							ghttp.RespondWith(http.StatusInternalServerError, `{"errors": [{"code":10008, "title":"error title", "detail":"error detail"}, {"code":10009, "title":"other error title", "detail":"other error detail"}]}`, nil),
+						),
+					)
+				})
+				It("returns an error", func() {
+					err := fakeRequester.Patch("test-endpoint", `data`)
+					Expect(err.Error()).To(ContainSubstring("http_error: 500 Internal Server Error"))
+					Expect(err.Error()).To(ContainSubstring("capi_error_code: 10008 capi_error_title: error title capi_error_detail: error detail"))
+					Expect(err.Error()).To(ContainSubstring("capi_error_code: 10009 capi_error_title: other error title capi_error_detail: other error detail"))
+				})
+			})
 		})
 
 		It("errors if data can not be marshalled", func() {
