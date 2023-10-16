@@ -116,7 +116,11 @@ func (r Requester) Patch(url string, data any) error {
 		if err != nil {
 			return fmt.Errorf("http_error: %s response_body: %s", response.Status, string(data))
 		}
-		return fmt.Errorf("http_error: %s capi_error_code: %d capi_error_title: %s capi_error_detail: %s", response.Status, receiver.Errors[0].Code, receiver.Errors[0].Title, receiver.Errors[0].Detail)
+		err = fmt.Errorf("http_error: %s", response.Status)
+		for i := range receiver.Errors {
+			err = fmt.Errorf("%w capi_error_code: %d capi_error_title: %s capi_error_detail: %s", err, receiver.Errors[i].Code, receiver.Errors[i].Title, receiver.Errors[i].Detail)
+		}
+		return err
 	}
 
 	return nil
