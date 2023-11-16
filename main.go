@@ -3,22 +3,19 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
-	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/config"
-	"upgrade-all-services-cli-plugin/internal/logger"
-	"upgrade-all-services-cli-plugin/internal/requester"
-	"upgrade-all-services-cli-plugin/internal/upgrader"
 
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/blang/semver/v4"
 )
 
-// version will be set via -ldflags at build time
-var version = "0.0.0"
+func main() {
+	plugin.Start(&UpgradePlugin{})
+}
 
 type UpgradePlugin struct{}
 
+// Run implements a required method of the code.cloudfoundry.org/cli/plugin.Plugin interface.
+// It is the entry point for running the plugin.
 func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "upgrade-all-services" {
 		if err := upgradeAllServices(cliConnection, args[1:]); err != nil {
@@ -28,6 +25,8 @@ func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 }
 
+// GetMetadata implements a required method of the code.cloudfoundry.org/cli/plugin.Plugin interface.
+// It provides the CF CLI with information about this plugin.
 func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name:          "UpgradeAllServices",
@@ -43,33 +42,5 @@ func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 				},
 			},
 		},
-	}
-}
-
-func main() {
-	plugin.Start(&UpgradePlugin{})
-}
-
-func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error {
-	cfg, err := config.ParseConfig(cliConnection, args)
-	if err != nil {
-		return err
-	}
-
-	logr := logger.New(time.Minute)
-	reqr := requester.NewRequester(cfg.APIEndpoint, cfg.APIToken, cfg.SkipSSLValidation)
-	if cfg.HTTPLogging {
-		reqr.Logger = logr
-	}
-
-	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, cfg.DryRun, cfg.CheckUpToDate, logr)
-}
-
-func pluginVersion() plugin.VersionType {
-	v := semver.MustParse(version)
-	return plugin.VersionType{
-		Major: int(v.Major),
-		Minor: int(v.Minor),
-		Build: int(v.Patch),
 	}
 }
