@@ -13,18 +13,20 @@ import (
 
 var _ = Describe("Requester", func() {
 	var (
-		fakeRequester requester.Requester
+		testRequester requester.Requester
 		fakeServer    *ghttp.Server
-		testReceiver  map[string]interface{}
+		testReceiver  struct {
+			TestValue string `json:"test_value"`
+		}
 	)
 
 	BeforeEach(func() {
-		testReceiver = map[string]interface{}{}
+		testReceiver.TestValue = ""
 
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 
-		fakeRequester = requester.NewRequester(fakeServer.URL(), "fake-token", false)
+		testRequester = requester.NewRequester(fakeServer.URL(), "fake-token", false)
 	})
 
 	Describe("Get", func() {
@@ -40,10 +42,10 @@ var _ = Describe("Requester", func() {
 			})
 
 			It("succeeds", func() {
-				err := fakeRequester.Get("test-endpoint", &testReceiver)
+				err := testRequester.Get("test-endpoint", &testReceiver)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(testReceiver).To(Equal(map[string]interface{}{"test_value": "foo"}))
+				Expect(testReceiver.TestValue).To(Equal("foo"))
 			})
 		})
 
@@ -59,7 +61,7 @@ var _ = Describe("Requester", func() {
 			})
 
 			It("returns an error", func() {
-				err := fakeRequester.Get("not-a-real-url", &testReceiver)
+				err := testRequester.Get("not-a-real-url", &testReceiver)
 				Expect(err).To(MatchError("http response: 404"))
 			})
 		})
@@ -76,33 +78,51 @@ var _ = Describe("Requester", func() {
 			})
 
 			It("returns an error", func() {
-				err := fakeRequester.Get("test-endpoint", &testReceiver)
-				Expect(err).To(MatchError("failed to unmarshal response into receiver error: unexpected end of JSON input"))
+				err := testRequester.Get("test-endpoint", &testReceiver)
+				Expect(err).To(MatchError("failed to unmarshal response into receiver error: error parsing JSON: EOF"))
 			})
 		})
 
 		When("passed a receiver that is not a pointer", func() {
 			It("returns an error", func() {
-				err := fakeRequester.Get("test-endpoint", testReceiver)
-				Expect(err).To(MatchError("receiver must be of type Pointer"))
+				err := testRequester.Get("test-endpoint", testReceiver)
+				Expect(err).To(MatchError("receiver must be a pointer to a struct, got non-pointer"))
+			})
+		})
+
+		When("passed a receiver that is a pointer to a non-struct", func() {
+			It("returns an error", func() {
+				var s string
+				err := testRequester.Get("test-endpoint", &s)
+				Expect(err).To(MatchError("receiver must be a pointer to a struct, got non-struct"))
 			})
 		})
 	})
 
 	Describe("Patch", func() {
+		var testBody struct {
+			Data string `json:"data"`
+		}
+
+		BeforeEach(func() {
+			testBody.Data = "bar"
+		})
+
 		When("request is valid", func() {
+
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyHeaderKV("Authorization", "fake-token"),
 						ghttp.VerifyRequest("PATCH", "/test-endpoint", ""),
+						ghttp.VerifyBody([]byte(`{"data":"bar"}`)),
 						ghttp.RespondWith(http.StatusAccepted, ``, nil),
 					),
 				)
 			})
 
 			It("succeeds", func() {
-				err := fakeRequester.Patch("test-endpoint", `data`)
+				err := testRequester.Patch("test-endpoint", testBody)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeServer.ReceivedRequests()).To(HaveLen(1))
 			})
@@ -121,7 +141,7 @@ var _ = Describe("Requester", func() {
 				})
 
 				It("returns an error", func() {
-					err := fakeRequester.Patch("test-endpoint", `data`)
+					err := testRequester.Patch("test-endpoint", testBody)
 					Expect(err).To(MatchError("http_error: 500 Internal Server Error response_body: Some body"))
 				})
 			})
@@ -138,7 +158,7 @@ var _ = Describe("Requester", func() {
 				})
 
 				It("returns an error", func() {
-					err := fakeRequester.Patch("test-endpoint", `data`)
+					err := testRequester.Patch("test-endpoint", testBody)
 					Expect(err).To(MatchError("http_error: 500 Internal Server Error capi_error_code: 10008 capi_error_title: error title capi_error_detail: error detail"))
 				})
 			})
@@ -155,7 +175,7 @@ var _ = Describe("Requester", func() {
 				})
 
 				It("returns an error", func() {
-					err := fakeRequester.Patch("test-endpoint", `data`)
+					err := testRequester.Patch("test-endpoint", testBody)
 					Expect(err.Error()).To(ContainSubstring("http_error: 500 Internal Server Error"))
 					Expect(err.Error()).To(ContainSubstring("capi_error_code: 10008 capi_error_title: error title capi_error_detail: error detail"))
 					Expect(err.Error()).To(ContainSubstring("capi_error_code: 10009 capi_error_title: other error title capi_error_detail: other error detail"))
@@ -163,9 +183,17 @@ var _ = Describe("Requester", func() {
 			})
 		})
 
-		It("errors if data can not be marshalled", func() {
-			err := fakeRequester.Patch("test-endpoint", math.Inf(1))
-			Expect(err).To(MatchError("error marshaling data: json: unsupported value: +Inf"))
+		It("errors if body is not a struct", func() {
+			err := testRequester.Patch("test-endpoint", math.Inf(1))
+			Expect(err).To(MatchError("input body must be a struct"))
+		})
+
+		It("errors if body can not be marshalled", func() {
+			input := struct {
+				Data func()
+			}{}
+			err := testRequester.Patch("test-endpoint", input)
+			Expect(err).To(MatchError(`error marshaling data: unsupported type "func()" at field "Data" (type "func()")`))
 		})
 	})
 })

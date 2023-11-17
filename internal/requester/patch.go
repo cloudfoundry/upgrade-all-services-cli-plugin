@@ -6,10 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
+
+	"code.cloudfoundry.org/jsonry"
 )
 
 func (r Requester) Patch(url string, data any) error {
-	d, err := json.Marshal(data)
+	if reflect.TypeOf(data).Kind() != reflect.Struct {
+		return fmt.Errorf("input body must be a struct")
+	}
+
+	d, err := jsonry.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("error marshaling data: %s", err)
 	}

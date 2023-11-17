@@ -21,17 +21,17 @@ type FakeCFClient struct {
 		result1 []ccapi.ServiceInstance
 		result2 error
 	}
-	GetServicePlansStub        func(string) ([]ccapi.Plan, error)
+	GetServicePlansStub        func(string) ([]ccapi.ServicePlan, error)
 	getServicePlansMutex       sync.RWMutex
 	getServicePlansArgsForCall []struct {
 		arg1 string
 	}
 	getServicePlansReturns struct {
-		result1 []ccapi.Plan
+		result1 []ccapi.ServicePlan
 		result2 error
 	}
 	getServicePlansReturnsOnCall map[int]struct {
-		result1 []ccapi.Plan
+		result1 []ccapi.ServicePlan
 		result2 error
 	}
 	UpgradeServiceInstanceStub        func(string, string) error
@@ -119,7 +119,7 @@ func (fake *FakeCFClient) GetServiceInstancesReturnsOnCall(i int, result1 []ccap
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetServicePlans(arg1 string) ([]ccapi.Plan, error) {
+func (fake *FakeCFClient) GetServicePlans(arg1 string) ([]ccapi.ServicePlan, error) {
 	fake.getServicePlansMutex.Lock()
 	ret, specificReturn := fake.getServicePlansReturnsOnCall[len(fake.getServicePlansArgsForCall)]
 	fake.getServicePlansArgsForCall = append(fake.getServicePlansArgsForCall, struct {
@@ -144,7 +144,7 @@ func (fake *FakeCFClient) GetServicePlansCallCount() int {
 	return len(fake.getServicePlansArgsForCall)
 }
 
-func (fake *FakeCFClient) GetServicePlansCalls(stub func(string) ([]ccapi.Plan, error)) {
+func (fake *FakeCFClient) GetServicePlansCalls(stub func(string) ([]ccapi.ServicePlan, error)) {
 	fake.getServicePlansMutex.Lock()
 	defer fake.getServicePlansMutex.Unlock()
 	fake.GetServicePlansStub = stub
@@ -157,28 +157,28 @@ func (fake *FakeCFClient) GetServicePlansArgsForCall(i int) string {
 	return argsForCall.arg1
 }
 
-func (fake *FakeCFClient) GetServicePlansReturns(result1 []ccapi.Plan, result2 error) {
+func (fake *FakeCFClient) GetServicePlansReturns(result1 []ccapi.ServicePlan, result2 error) {
 	fake.getServicePlansMutex.Lock()
 	defer fake.getServicePlansMutex.Unlock()
 	fake.GetServicePlansStub = nil
 	fake.getServicePlansReturns = struct {
-		result1 []ccapi.Plan
+		result1 []ccapi.ServicePlan
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetServicePlansReturnsOnCall(i int, result1 []ccapi.Plan, result2 error) {
+func (fake *FakeCFClient) GetServicePlansReturnsOnCall(i int, result1 []ccapi.ServicePlan, result2 error) {
 	fake.getServicePlansMutex.Lock()
 	defer fake.getServicePlansMutex.Unlock()
 	fake.GetServicePlansStub = nil
 	if fake.getServicePlansReturnsOnCall == nil {
 		fake.getServicePlansReturnsOnCall = make(map[int]struct {
-			result1 []ccapi.Plan
+			result1 []ccapi.ServicePlan
 			result2 error
 		})
 	}
 	fake.getServicePlansReturnsOnCall[i] = struct {
-		result1 []ccapi.Plan
+		result1 []ccapi.ServicePlan
 		result2 error
 	}{result1, result2}
 }

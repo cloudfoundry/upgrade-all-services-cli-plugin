@@ -24,7 +24,7 @@ var _ = Describe("Upgrade", func() {
 
 	var (
 		fakeCFClient                  *upgraderfakes.FakeCFClient
-		fakePlan                      ccapi.Plan
+		fakePlan                      ccapi.ServicePlan
 		fakeInstance1                 ccapi.ServiceInstance
 		fakeInstance2                 ccapi.ServiceInstance
 		fakeInstanceNoUpgrade         ccapi.ServiceInstance
@@ -36,7 +36,7 @@ var _ = Describe("Upgrade", func() {
 	)
 
 	BeforeEach(func() {
-		fakePlan = ccapi.Plan{
+		fakePlan = ccapi.ServicePlan{
 			GUID:                   fakePlanGUID,
 			MaintenanceInfoVersion: "test-maintenance-info",
 		}
@@ -77,7 +77,7 @@ var _ = Describe("Upgrade", func() {
 		fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstanceNoUpgrade, fakeInstanceCreateFailed, fakeInstanceDestroyFailed}
 		fakeServiceInstancesNoUpgrade = []ccapi.ServiceInstance{fakeInstanceNoUpgrade, fakeInstanceCreateFailed}
 		fakeCFClient = &upgraderfakes.FakeCFClient{}
-		fakeCFClient.GetServicePlansReturns([]ccapi.Plan{fakePlan}, nil)
+		fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{fakePlan}, nil)
 		fakeCFClient.GetServiceInstancesReturns(fakeServiceInstances, nil)
 
 		fakeLog = &upgraderfakes.FakeLogger{}
@@ -199,7 +199,7 @@ var _ = Describe("Upgrade", func() {
 
 		When("no service plans are available", func() {
 			It("returns error stating no plans available", func() {
-				fakeCFClient.GetServicePlansReturns([]ccapi.Plan{}, nil)
+				fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{}, nil)
 
 				err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, true, fakeLog)
 				Expect(err).To(MatchError(fmt.Sprintf("no service plans available for broker: %s", fakeBrokerName)))
@@ -227,7 +227,7 @@ var _ = Describe("Upgrade", func() {
 
 	When("no service plans are available", func() {
 		It("returns error stating no plans available", func() {
-			fakeCFClient.GetServicePlansReturns([]ccapi.Plan{}, nil)
+			fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{}, nil)
 
 			err := upgrader.Upgrade(fakeCFClient, fakeBrokerName, 1, false, false, fakeLog)
 			Expect(err).To(MatchError(fmt.Sprintf("no service plans available for broker: %s", fakeBrokerName)))

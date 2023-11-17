@@ -12,7 +12,7 @@ import (
 //counterfeiter:generate . CFClient
 type CFClient interface {
 	GetServiceInstances([]string) ([]ccapi.ServiceInstance, error)
-	GetServicePlans(string) ([]ccapi.Plan, error)
+	GetServicePlans(string) ([]ccapi.ServicePlan, error)
 	UpgradeServiceInstance(string, string) error
 }
 
