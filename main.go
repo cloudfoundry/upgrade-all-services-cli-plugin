@@ -38,7 +38,7 @@ func (p *UpgradePlugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Upgrade all service instances from a broker to the latest available version of their current service plans.",
 				UsageDetails: plugin.Usage{
 					Usage:   config.Usage,
-					Options: config.Options(),
+					Options: config.UsageOptions(),
 				},
 			},
 		},
