@@ -38,7 +38,7 @@ func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun, chec
 
 	// See internal/ccapi/service_instances.go to understand why we are setting this value here
 	for i := range upgradableInstances {
-		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].PlanGUID]
+		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].ServicePlanGUID]
 	}
 
 	switch {
@@ -74,7 +74,7 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 				UpgradeableIndex:       i,
 				ServiceInstanceName:    instance.Name,
 				ServiceInstanceGUID:    instance.GUID,
-				MaintenanceInfoVersion: planVersions[instance.PlanGUID],
+				MaintenanceInfoVersion: planVersions[instance.ServicePlanGUID],
 			}
 		}
 		close(upgradeQueue)

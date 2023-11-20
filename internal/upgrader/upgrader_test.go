@@ -43,30 +43,30 @@ var _ = Describe("Upgrade", func() {
 		fakeInstance1 = ccapi.ServiceInstance{
 			Name:             "fake-instance-name-1",
 			GUID:             "fake-instance-guid-1",
-			PlanGUID:         fakePlanGUID,
+			ServicePlanGUID:  fakePlanGUID,
 			UpgradeAvailable: true,
 		}
 		fakeInstance2 = ccapi.ServiceInstance{
 			Name:             "fake-instance-name-2",
 			GUID:             "fake-instance-guid-2",
-			PlanGUID:         fakePlanGUID,
+			ServicePlanGUID:  fakePlanGUID,
 			UpgradeAvailable: true,
 		}
 		fakeInstanceNoUpgrade = ccapi.ServiceInstance{
 			GUID:             "fake-instance-no-upgrade-GUID",
-			PlanGUID:         fakePlanGUID,
+			ServicePlanGUID:  fakePlanGUID,
 			UpgradeAvailable: false,
 		}
 		fakeInstanceCreateFailed = ccapi.ServiceInstance{
 			Name:             "fake-instance-create-failed",
 			GUID:             "fake-instance-create-failed-GUID",
-			PlanGUID:         fakePlanGUID,
+			ServicePlanGUID:  fakePlanGUID,
 			UpgradeAvailable: true,
 		}
 		fakeInstanceDestroyFailed = ccapi.ServiceInstance{
 			Name:             "fake-instance-destroy-failed",
 			GUID:             "fake-instance-destroy-failed-GUID",
-			PlanGUID:         fakePlanGUID,
+			ServicePlanGUID:  fakePlanGUID,
 			UpgradeAvailable: true,
 		}
 
