@@ -6,12 +6,11 @@ import (
 )
 
 func (c CCAPI) UpgradeServiceInstance(guid, miVersion string) error {
-	var body struct {
-		MaintenanceInfo struct {
-			Version string `json:"version"`
-		} `json:"maintenance_info"`
+	body := struct {
+		MaintenanceInfoVersion string `jsonry:"maintenance_info.version"`
+	}{
+		MaintenanceInfoVersion: miVersion,
 	}
-	body.MaintenanceInfo.Version = miVersion
 
 	err := c.requester.Patch(fmt.Sprintf("v3/service_instances/%s", guid), body)
 	if err != nil {

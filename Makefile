@@ -13,7 +13,7 @@ test: download lint test-units ## run lint and unit tests
 
 .PHONY: test-units
 test-units:
-	go run github.com/onsi/ginkgo/v2/ginkgo -r
+	go run github.com/onsi/ginkgo/v2/ginkgo -r -p
 
 .PHONY: download
 download: ## download go module dependencies

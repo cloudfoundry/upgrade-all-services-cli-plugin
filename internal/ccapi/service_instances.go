@@ -3,8 +3,6 @@ package ccapi
 import (
 	"fmt"
 	"strings"
-
-	"code.cloudfoundry.org/jsonry"
 )
 
 type ServiceInstance struct {
@@ -84,14 +82,6 @@ func (c CCAPI) GetServiceInstances(planGUIDs []string) ([]ServiceInstance, error
 	}
 	embedIncludes(si)
 	return si.Instances, nil
-}
-
-func (s *ServiceInstance) UnmarshalJSON(b []byte) error {
-	return jsonry.Unmarshal(b, s)
-}
-
-func (s *serviceInstances) UnmarshalJSON(b []byte) error {
-	return jsonry.Unmarshal(b, s)
 }
 
 func embedIncludes(si serviceInstances) []ServiceInstance {

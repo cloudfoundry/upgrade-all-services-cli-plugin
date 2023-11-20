@@ -1,18 +1,15 @@
 package requester
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
+
+	"code.cloudfoundry.org/jsonry"
 )
 
+// Get performs an HTTP GET. It takes a pointer to a struct where the result is stored.
 func (r Requester) Get(url string, receiver any) error {
-	if reflect.TypeOf(receiver).Kind() != reflect.Ptr {
-		return fmt.Errorf("receiver must be of type Pointer")
-	}
-
 	url = fmt.Sprintf("%s/%s", r.baseURL, url)
 	r.Logger.Printf("HTTP GET: %s", url)
 
@@ -37,7 +34,7 @@ func (r Requester) Get(url string, receiver any) error {
 		return fmt.Errorf("unable to read http response body error: %s", err)
 	}
 	r.Logger.Printf("Response body: %s", data)
-	err = json.Unmarshal(data, &receiver)
+	err = jsonry.Unmarshal(data, receiver)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal response into receiver error: %s", err)
 	}
