@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 
 	"code.cloudfoundry.org/jsonry"
 )
 
+// Patch performs an HTTP PATCH. It takes a struct as input data.
 func (r Requester) Patch(url string, data any) error {
-	if reflect.TypeOf(data).Kind() != reflect.Struct {
-		return fmt.Errorf("input body must be a struct")
-	}
-
 	d, err := jsonry.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("error marshaling data: %s", err)

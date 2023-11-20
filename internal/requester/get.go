@@ -4,20 +4,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 
 	"code.cloudfoundry.org/jsonry"
 )
 
+// Get performs an HTTP GET. It takes a pointer to a struct where the result is stored.
 func (r Requester) Get(url string, receiver any) error {
-	receiverType := reflect.ValueOf(receiver)
-	switch {
-	case receiverType.Kind() != reflect.Ptr:
-		return fmt.Errorf("receiver must be a pointer to a struct, got non-pointer")
-	case receiverType.Elem().Kind() != reflect.Struct:
-		return fmt.Errorf("receiver must be a pointer to a struct, got non-struct")
-	}
-
 	url = fmt.Sprintf("%s/%s", r.baseURL, url)
 	r.Logger.Printf("HTTP GET: %s", url)
 

@@ -1,7 +1,6 @@
 package requester_test
 
 import (
-	"math"
 	"net/http"
 
 	"upgrade-all-services-cli-plugin/internal/requester"
@@ -80,21 +79,6 @@ var _ = Describe("Requester", func() {
 			It("returns an error", func() {
 				err := testRequester.Get("test-endpoint", &testReceiver)
 				Expect(err).To(MatchError("failed to unmarshal response into receiver error: error parsing JSON: EOF"))
-			})
-		})
-
-		When("passed a receiver that is not a pointer", func() {
-			It("returns an error", func() {
-				err := testRequester.Get("test-endpoint", testReceiver)
-				Expect(err).To(MatchError("receiver must be a pointer to a struct, got non-pointer"))
-			})
-		})
-
-		When("passed a receiver that is a pointer to a non-struct", func() {
-			It("returns an error", func() {
-				var s string
-				err := testRequester.Get("test-endpoint", &s)
-				Expect(err).To(MatchError("receiver must be a pointer to a struct, got non-struct"))
 			})
 		})
 	})
@@ -181,11 +165,6 @@ var _ = Describe("Requester", func() {
 					Expect(err.Error()).To(ContainSubstring("capi_error_code: 10009 capi_error_title: other error title capi_error_detail: other error detail"))
 				})
 			})
-		})
-
-		It("errors if body is not a struct", func() {
-			err := testRequester.Patch("test-endpoint", math.Inf(1))
-			Expect(err).To(MatchError("input body must be a struct"))
 		})
 
 		It("errors if body can not be marshalled", func() {
