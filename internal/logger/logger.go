@@ -50,7 +50,7 @@ func (l *Logger) SkippingInstance(instance ccapi.ServiceInstance) {
 	defer l.lock.Unlock()
 
 	l.skipped++
-	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperation.Type, instance.LastOperation.State)
+	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperationType, instance.LastOperationState)
 }
 
 func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance) {
@@ -132,15 +132,15 @@ func logRowFormatTotals(l *Logger) {
 				failure.instance.MaintenanceInfoVersion,
 
 				string(failure.err.Error()),
-				failure.instance.Included.Organization.Name,
-				failure.instance.Included.Organization.GUID,
-				failure.instance.Included.Space.Name,
-				failure.instance.Included.Space.GUID,
-				failure.instance.Included.Plan.Name,
-				failure.instance.Included.Plan.GUID,
+				failure.instance.OrganizationName,
+				failure.instance.OrganizationGUID,
+				failure.instance.SpaceName,
+				failure.instance.SpaceGUID,
+				failure.instance.ServicePlanName,
+				failure.instance.ServicePlanGUID,
 				failure.instance.PlanMaintenanceInfoVersion,
-				failure.instance.Included.ServiceOffering.Name,
-				failure.instance.Included.ServiceOffering.GUID,
+				failure.instance.ServiceOfferingName,
+				failure.instance.ServiceOfferingGUID,
 			)
 		}
 	}

@@ -70,10 +70,10 @@ var _ = Describe("Upgrade", func() {
 			UpgradeAvailable: true,
 		}
 
-		fakeInstanceCreateFailed.LastOperation.Type = "create"
-		fakeInstanceCreateFailed.LastOperation.State = "failed"
-		fakeInstanceDestroyFailed.LastOperation.Type = "destroy"
-		fakeInstanceDestroyFailed.LastOperation.State = "failed"
+		fakeInstanceCreateFailed.LastOperationType = "create"
+		fakeInstanceCreateFailed.LastOperationState = "failed"
+		fakeInstanceDestroyFailed.LastOperationType = "destroy"
+		fakeInstanceDestroyFailed.LastOperationState = "failed"
 		fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstanceNoUpgrade, fakeInstanceCreateFailed, fakeInstanceDestroyFailed}
 		fakeServiceInstancesNoUpgrade = []ccapi.ServiceInstance{fakeInstanceNoUpgrade, fakeInstanceCreateFailed}
 		fakeCFClient = &upgraderfakes.FakeCFClient{}
@@ -118,8 +118,8 @@ var _ = Describe("Upgrade", func() {
 		Expect(instanceSkipped.Name).To(Equal("fake-instance-create-failed"))
 		Expect(instanceSkipped.GUID).To(Equal("fake-instance-create-failed-GUID"))
 		Expect(instanceSkipped.UpgradeAvailable).To(BeTrue())
-		Expect(instanceSkipped.LastOperation.Type).To(Equal("create"))
-		Expect(instanceSkipped.LastOperation.State).To(Equal("failed"))
+		Expect(instanceSkipped.LastOperationType).To(Equal("create"))
+		Expect(instanceSkipped.LastOperationState).To(Equal("failed"))
 
 		Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(3))
 		instance1 := fakeLog.UpgradeStartingArgsForCall(0)

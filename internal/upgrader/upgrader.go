@@ -145,7 +145,7 @@ func discoverUpgradeableInstances(api CFClient, planGUIDs []string, log Logger) 
 
 	var upgradableInstances []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
-		if i.UpgradeAvailable && isCreateFailed(i.LastOperation.Type, i.LastOperation.State) {
+		if i.UpgradeAvailable && isCreateFailed(i.LastOperationType, i.LastOperationState) {
 			log.SkippingInstance(i)
 		} else if i.UpgradeAvailable {
 			upgradableInstances = append(upgradableInstances, i)

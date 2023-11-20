@@ -125,13 +125,11 @@ var _ = Describe("Logger", func() {
 
 func createFailedInstance() ccapi.ServiceInstance {
 	return ccapi.ServiceInstance{
-		Name:             "create-failed-instance",
-		GUID:             "create-failed-instance-guid",
-		UpgradeAvailable: true,
-		LastOperation: ccapi.LastOperation{
-			Type:  "create",
-			State: "failed",
-		},
+		Name:               "create-failed-instance",
+		GUID:               "create-failed-instance-guid",
+		UpgradeAvailable:   true,
+		LastOperationType:  "create",
+		LastOperationState: "failed",
 	}
 }
 
@@ -157,31 +155,16 @@ func indexedInstance(index int, upgradeAvailable bool) ccapi.ServiceInstance {
 		MaintenanceInfoVersion:     formatValue("fake-version", index),
 		PlanMaintenanceInfoVersion: formatValue("fake-plan-version", index),
 
-		UpgradeAvailable: upgradeAvailable,
-		LastOperation: ccapi.LastOperation{
-			Type:  formatValue("last-operation-type", index),
-			State: formatValue("last-operation-state", index),
-		},
-		Included: ccapi.EmbeddedInclude{
-			Plan: ccapi.IncludedPlan{
-				Name:                formatValue("fake-plan-name", index),
-				GUID:                formatValue("fake-plan-guid", index),
-				ServiceOfferingGUID: formatValue("fake-soffer-guid", index),
-			},
-			ServiceOffering: ccapi.ServiceOffering{
-				Name: formatValue("fake-soffer-name", index),
-				GUID: formatValue("fake-soffer-guid", index),
-			},
-			Space: ccapi.Space{
-				Name:             formatValue("fake-space-name", index),
-				GUID:             formatValue("fake-space-guid", index),
-				OrganizationGUID: formatValue("fake-org-guid", index),
-			},
-			Organization: ccapi.Organization{
-				Name: formatValue("fake-org-name", index),
-				GUID: formatValue("fake-org-guid", index),
-			},
-		},
+		UpgradeAvailable:   upgradeAvailable,
+		LastOperationType:  formatValue("last-operation-type", index),
+		LastOperationState: formatValue("last-operation-state", index),
+
+		ServiceOfferingGUID: formatValue("fake-soffer-guid", index),
+		ServiceOfferingName: formatValue("fake-soffer-name", index),
+		ServicePlanName:     formatValue("fake-plan-name", index),
+		OrganizationGUID:    formatValue("fake-org-guid", index),
+		OrganizationName:    formatValue("fake-org-name", index),
+		SpaceName:           formatValue("fake-space-name", index),
 	}
 }
 
