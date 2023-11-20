@@ -151,8 +151,8 @@ func indexedInstance(index int, upgradeAvailable bool) ccapi.ServiceInstance {
 		Name: formatValue("my-service-instance", index),
 		GUID: formatValue("my-service-instance-guid", index),
 
-		PlanGUID:  formatValue("fake-plan-guid", index),
-		SpaceGUID: formatValue("fake-space-guid", index),
+		ServicePlanGUID: formatValue("fake-plan-guid", index),
+		SpaceGUID:       formatValue("fake-space-guid", index),
 
 		MaintenanceInfoVersion:     formatValue("fake-version", index),
 		PlanMaintenanceInfoVersion: formatValue("fake-plan-version", index),

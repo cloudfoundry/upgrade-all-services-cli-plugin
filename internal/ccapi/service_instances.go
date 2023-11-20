@@ -11,7 +11,7 @@ type ServiceInstance struct {
 	GUID             string `json:"guid"`
 	Name             string `json:"name"`
 	UpgradeAvailable bool   `json:"upgrade_available"`
-	PlanGUID         string `jsonry:"relationships.service_plan.data.guid"`
+	ServicePlanGUID  string `jsonry:"relationships.service_plan.data.guid"`
 	SpaceGUID        string `jsonry:"relationships.space.data.guid"`
 
 	LastOperation LastOperation `json:"last_operation"`
@@ -21,7 +21,7 @@ type ServiceInstance struct {
 
 	// Can't be retrieves from CF API using `fields` query parameter
 	// We populate this field in Upgrade function in internal/upgrader/upgrader.go
-	PlanMaintenanceInfoVersion string
+	PlanMaintenanceInfoVersion string `json:"-"`
 }
 
 type LastOperation struct {
@@ -114,9 +114,9 @@ func embedIncludes(si serviceInstances) []ServiceInstance {
 
 	for i, instance := range si.Instances {
 		emb := EmbeddedInclude{}
-		emb.Plan = plans[instance.PlanGUID]
+		emb.Plan = plans[instance.ServicePlanGUID]
 		emb.Space = spaces[instance.SpaceGUID]
-		emb.ServiceOffering = soffers[plans[instance.PlanGUID].ServiceOfferingGUID]
+		emb.ServiceOffering = soffers[plans[instance.ServicePlanGUID].ServiceOfferingGUID]
 		emb.Organization = orgs[spaces[instance.SpaceGUID].OrganizationGUID]
 
 		si.Instances[i].Included = emb
