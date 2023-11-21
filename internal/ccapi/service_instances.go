@@ -75,18 +75,15 @@ func (c CCAPI) GetServiceInstances(planGUIDs []string) ([]ServiceInstance, error
 		return nil, fmt.Errorf("error getting service instances: %s", err)
 	}
 
-	// Enrich with service plan and service offering data
+	// Enrich with service plan, service offering space, and org data
 	servicePlanGUIDLookup := computeServicePlanGUIDLookup(receiver.Included.Plans, receiver.Included.ServiceOfferings)
+	spaceGUIDLookup := computeSpaceGUIDLookup(receiver.Included.Spaces, receiver.Included.Organizations)
 	for i := range receiver.Instances {
 		planName, offeringGUID, offeringName := servicePlanGUIDLookup(receiver.Instances[i].ServicePlanGUID)
 		receiver.Instances[i].ServicePlanName = planName
 		receiver.Instances[i].ServiceOfferingGUID = offeringGUID
 		receiver.Instances[i].ServiceOfferingName = offeringName
-	}
 
-	// Enrich with space and org data
-	spaceGUIDLookup := computeSpaceGUIDLookup(receiver.Included.Spaces, receiver.Included.Organizations)
-	for i := range receiver.Instances {
 		spaceName, orgGUID, orgName := spaceGUIDLookup(receiver.Instances[i].SpaceGUID)
 		receiver.Instances[i].SpaceName = spaceName
 		receiver.Instances[i].OrganizationGUID = orgGUID
