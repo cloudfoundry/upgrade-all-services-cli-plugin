@@ -25,7 +25,7 @@ type ServiceInstance struct {
 	OrganizationGUID    string `json:"-"`
 	OrganizationName    string `json:"-"`
 
-	// Can't be retrieves from CF API using `fields` query parameter
+	// Can't be retrieved from CF API using `fields` query parameter
 	// We populate this field in Upgrade function in internal/upgrader/upgrader.go
 	PlanMaintenanceInfoVersion string `json:"-"`
 }
