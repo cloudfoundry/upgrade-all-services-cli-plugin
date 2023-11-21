@@ -28,11 +28,11 @@ func (c CCAPI) UpgradeServiceInstance(guid, miVersion string) error {
 				return fmt.Errorf("upgrade request error: %s", err)
 			}
 
-			if si.LastOperation.State == "failed" && si.LastOperation.Type == "update" {
-				return fmt.Errorf("%s", si.LastOperation.Description)
+			if si.LastOperationState == "failed" && si.LastOperationType == "update" {
+				return fmt.Errorf("%s", si.LastOperationDescription)
 			}
 
-			if si.LastOperation.State != "in progress" || si.LastOperation.Type != "update" {
+			if si.LastOperationState != "in progress" || si.LastOperationType != "update" {
 				return nil
 			}
 		}
