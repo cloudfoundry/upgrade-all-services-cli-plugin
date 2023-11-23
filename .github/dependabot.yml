@@ -3,12 +3,10 @@ updates:
 - package-ecosystem: gomod
   directory: "/"
   schedule:
-    interval: "weekly"
-    day: "saturday"
-    time: "06:00"
+    interval: "daily"
+    time: "22:00"
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
-    interval: "weekly"
-    day: "saturday"
-    time: "06:00"
+    interval: "daily"
+    time: "22:00"
