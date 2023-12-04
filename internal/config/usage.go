@@ -11,10 +11,11 @@ const Usage = "cf upgrade-all-services <broker-name> [options]"
 // UsageOptions documents the available options. It is called by the CF CLI plugin infrastructure.
 func UsageOptions() map[string]string {
 	return map[string]string{
-		parallelFlag:      parallelDescription,
-		httpLoggingFlag:   httpLoggingDescription,
-		dryRunFlag:        dryRunDescription,
-		checkUpToDateFlag: checkUpToDateDescription,
+		parallelFlag:              parallelDescription,
+		httpLoggingFlag:           httpLoggingDescription,
+		dryRunFlag:                dryRunDescription,
+		checkUpToDateFlag:         checkUpToDateDescription,
+		checkDeactivatedPlansFlag: checkDeactivatedPlansDescription,
 	}
 }
 

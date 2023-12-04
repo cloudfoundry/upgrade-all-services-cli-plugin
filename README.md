@@ -36,3 +36,13 @@ Options:
     -loghttp  - log HTTP requests and responses
     -dry-run  - print the service instances that would be upgraded
 ```
+
+
+cf upgrade-all-services csb-gblue
+
+cf upgrade-all-services csb-gblue -check-up-to-date
+
+cf upgrade-all-services csb-gblue -check-up-to-date 1.5.7
+
+cf upgrade-all-services csb-gblue -check-up-to-date 1.5.7 -check-deactivated-plans
+

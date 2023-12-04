@@ -8,14 +8,15 @@ import (
 
 // Config is the type that contains all the configuration data required to run the plugin
 type Config struct {
-	BrokerName        string
-	APIToken          string
-	APIEndpoint       string
-	SkipSSLValidation bool
-	HTTPLogging       bool
-	DryRun            bool
-	CheckUpToDate     bool
-	ParallelUpgrades  int
+	BrokerName            string
+	APIToken              string
+	APIEndpoint           string
+	SkipSSLValidation     bool
+	HTTPLogging           bool
+	DryRun                bool
+	CheckUpToDate         bool
+	CheckDeactivatedPlans bool
+	ParallelUpgrades      int
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -27,6 +28,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
 	flagSet.BoolVar(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
+	flagSet.BoolVar(&cfg.CheckDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.

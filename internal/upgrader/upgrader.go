@@ -23,39 +23,55 @@ type Logger interface {
 	UpgradeStarting(instance ccapi.ServiceInstance)
 	UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration)
 	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
+	DeactivatedPlan(instance ccapi.ServiceInstance, planName, offeringName string)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
 
-func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun, checkUpToDate bool, log Logger) error {
-	planVersions, err := discoverServicePlans(api, brokerName)
+type UpgradeConfig struct {
+	BrokerName            string
+	ParallelUpgrades      int
+	DryRun                bool
+	CheckUpToDate         bool
+	CheckDeactivatedPlans bool
+}
+
+func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
+	planVersions, err := discoverServicePlans(api, cfg.BrokerName)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("discovering service instances for broker: %s", brokerName)
+	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
 	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions), log)
+	if err != nil {
+		return err
+	}
 
 	// See internal/ccapi/service_instances.go to understand why we are setting this value here
 	for i := range upgradableInstances {
 		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].ServicePlanGUID]
 	}
 
+	if cfg.CheckDeactivatedPlans {
+		if err = checkDeactivatedPlans(); err != nil {
+			return err
+		}
+	}
+
 	switch {
-	case err != nil:
-		return err
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
-	case checkUpToDate:
+	case cfg.CheckUpToDate:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performCheckUpToDate(upgradableInstances, log)
-	case dryRun:
+	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
 	default:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performUpgrade(api, upgradableInstances, planVersions, parallelUpgrades, log)
+		return performUpgrade(api, upgradableInstances, planVersions, cfg.ParallelUpgrades, log)
 	}
 }
 

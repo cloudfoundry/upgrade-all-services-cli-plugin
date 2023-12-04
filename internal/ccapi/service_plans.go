@@ -6,6 +6,7 @@ import (
 
 type ServicePlan struct {
 	GUID                   string `json:"guid"`
+	Available              bool   `json:"-"`
 	MaintenanceInfoVersion string `jsonry:"maintenance_info.version"`
 }
 
