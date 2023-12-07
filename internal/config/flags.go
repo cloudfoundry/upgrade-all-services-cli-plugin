@@ -23,5 +23,5 @@ const (
 
 	checkDeactivatedPlansDefault     = false
 	checkDeactivatedPlansFlag        = "check-deactivated-plans"
-	checkDeactivatedPlansDescription = "checks whether any of the plans have been deactivated"
+	checkDeactivatedPlansDescription = "checks whether any of the plans have been deactivated. If any deactivated plans are found, the execution will fail"
 )

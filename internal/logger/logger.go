@@ -53,6 +53,24 @@ func (l *Logger) SkippingInstance(instance ccapi.ServiceInstance) {
 	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperationType, instance.LastOperationState)
 }
 
+func (l *Logger) DeactivatedPlan(instance ccapi.ServiceInstance) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	l.skipped++
+	l.printf(
+		"skipping instance: %q guid: %q Deactivated Plan: %q Offering: %q Offering guid: %q Upgrade Available: %t Last Operation: Type: %q State: %q",
+		instance.Name,
+		instance.GUID,
+		instance.ServicePlanName,
+		instance.ServiceOfferingName,
+		instance.ServiceOfferingGUID,
+		instance.UpgradeAvailable,
+		instance.LastOperationType,
+		instance.LastOperationState,
+	)
+}
+
 func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -131,14 +149,14 @@ func logRowFormatTotals(l *Logger) {
 				failure.instance.GUID,
 				failure.instance.MaintenanceInfoVersion,
 
-				string(failure.err.Error()),
+				failure.err.Error(),
 				failure.instance.OrganizationName,
 				failure.instance.OrganizationGUID,
 				failure.instance.SpaceName,
 				failure.instance.SpaceGUID,
 				failure.instance.ServicePlanName,
 				failure.instance.ServicePlanGUID,
-				failure.instance.PlanMaintenanceInfoVersion,
+				failure.instance.ServicePlanMaintenanceInfoVersion,
 				failure.instance.ServiceOfferingName,
 				failure.instance.ServiceOfferingGUID,
 			)

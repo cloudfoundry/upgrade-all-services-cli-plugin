@@ -35,14 +35,6 @@ Options:
     -parallel - number of upgrades to run in parallel (defaults to 10)
     -loghttp  - log HTTP requests and responses
     -dry-run  - print the service instances that would be upgraded
+    -check-up-to-date - checks and fails if any service instance is not up-to-date - implies a dry-run
+    -check-deactivated-plans - checks whether any of the plans have been deactivated. If any deactivated plans are found, the execution will fail
 ```
-
-
-cf upgrade-all-services csb-gblue
-
-cf upgrade-all-services csb-gblue -check-up-to-date
-
-cf upgrade-all-services csb-gblue -check-up-to-date 1.5.7
-
-cf upgrade-all-services csb-gblue -check-up-to-date 1.5.7 -check-deactivated-plans
-

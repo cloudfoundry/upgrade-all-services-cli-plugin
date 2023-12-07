@@ -8,16 +8,16 @@ import (
 )
 
 type FakeCFClient struct {
-	GetServiceInstancesStub        func([]string) ([]ccapi.ServiceInstance, error)
-	getServiceInstancesMutex       sync.RWMutex
-	getServiceInstancesArgsForCall []struct {
-		arg1 []string
+	GetServiceInstancesByServicePlansStub        func([]ccapi.ServicePlan) ([]ccapi.ServiceInstance, error)
+	getServiceInstancesByServicePlansMutex       sync.RWMutex
+	getServiceInstancesByServicePlansArgsForCall []struct {
+		arg1 []ccapi.ServicePlan
 	}
-	getServiceInstancesReturns struct {
+	getServiceInstancesByServicePlansReturns struct {
 		result1 []ccapi.ServiceInstance
 		result2 error
 	}
-	getServiceInstancesReturnsOnCall map[int]struct {
+	getServiceInstancesByServicePlansReturnsOnCall map[int]struct {
 		result1 []ccapi.ServiceInstance
 		result2 error
 	}
@@ -50,21 +50,21 @@ type FakeCFClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCFClient) GetServiceInstances(arg1 []string) ([]ccapi.ServiceInstance, error) {
-	var arg1Copy []string
+func (fake *FakeCFClient) GetServiceInstancesByServicePlans(arg1 []ccapi.ServicePlan) ([]ccapi.ServiceInstance, error) {
+	var arg1Copy []ccapi.ServicePlan
 	if arg1 != nil {
-		arg1Copy = make([]string, len(arg1))
+		arg1Copy = make([]ccapi.ServicePlan, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.getServiceInstancesMutex.Lock()
-	ret, specificReturn := fake.getServiceInstancesReturnsOnCall[len(fake.getServiceInstancesArgsForCall)]
-	fake.getServiceInstancesArgsForCall = append(fake.getServiceInstancesArgsForCall, struct {
-		arg1 []string
+	fake.getServiceInstancesByServicePlansMutex.Lock()
+	ret, specificReturn := fake.getServiceInstancesByServicePlansReturnsOnCall[len(fake.getServiceInstancesByServicePlansArgsForCall)]
+	fake.getServiceInstancesByServicePlansArgsForCall = append(fake.getServiceInstancesByServicePlansArgsForCall, struct {
+		arg1 []ccapi.ServicePlan
 	}{arg1Copy})
-	stub := fake.GetServiceInstancesStub
-	fakeReturns := fake.getServiceInstancesReturns
-	fake.recordInvocation("GetServiceInstances", []interface{}{arg1Copy})
-	fake.getServiceInstancesMutex.Unlock()
+	stub := fake.GetServiceInstancesByServicePlansStub
+	fakeReturns := fake.getServiceInstancesByServicePlansReturns
+	fake.recordInvocation("GetServiceInstancesByServicePlans", []interface{}{arg1Copy})
+	fake.getServiceInstancesByServicePlansMutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
 	}
@@ -74,46 +74,46 @@ func (fake *FakeCFClient) GetServiceInstances(arg1 []string) ([]ccapi.ServiceIns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeCFClient) GetServiceInstancesCallCount() int {
-	fake.getServiceInstancesMutex.RLock()
-	defer fake.getServiceInstancesMutex.RUnlock()
-	return len(fake.getServiceInstancesArgsForCall)
+func (fake *FakeCFClient) GetServiceInstancesByServicePlansCallCount() int {
+	fake.getServiceInstancesByServicePlansMutex.RLock()
+	defer fake.getServiceInstancesByServicePlansMutex.RUnlock()
+	return len(fake.getServiceInstancesByServicePlansArgsForCall)
 }
 
-func (fake *FakeCFClient) GetServiceInstancesCalls(stub func([]string) ([]ccapi.ServiceInstance, error)) {
-	fake.getServiceInstancesMutex.Lock()
-	defer fake.getServiceInstancesMutex.Unlock()
-	fake.GetServiceInstancesStub = stub
+func (fake *FakeCFClient) GetServiceInstancesByServicePlansCalls(stub func([]ccapi.ServicePlan) ([]ccapi.ServiceInstance, error)) {
+	fake.getServiceInstancesByServicePlansMutex.Lock()
+	defer fake.getServiceInstancesByServicePlansMutex.Unlock()
+	fake.GetServiceInstancesByServicePlansStub = stub
 }
 
-func (fake *FakeCFClient) GetServiceInstancesArgsForCall(i int) []string {
-	fake.getServiceInstancesMutex.RLock()
-	defer fake.getServiceInstancesMutex.RUnlock()
-	argsForCall := fake.getServiceInstancesArgsForCall[i]
+func (fake *FakeCFClient) GetServiceInstancesByServicePlansArgsForCall(i int) []ccapi.ServicePlan {
+	fake.getServiceInstancesByServicePlansMutex.RLock()
+	defer fake.getServiceInstancesByServicePlansMutex.RUnlock()
+	argsForCall := fake.getServiceInstancesByServicePlansArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeCFClient) GetServiceInstancesReturns(result1 []ccapi.ServiceInstance, result2 error) {
-	fake.getServiceInstancesMutex.Lock()
-	defer fake.getServiceInstancesMutex.Unlock()
-	fake.GetServiceInstancesStub = nil
-	fake.getServiceInstancesReturns = struct {
+func (fake *FakeCFClient) GetServiceInstancesByServicePlansReturns(result1 []ccapi.ServiceInstance, result2 error) {
+	fake.getServiceInstancesByServicePlansMutex.Lock()
+	defer fake.getServiceInstancesByServicePlansMutex.Unlock()
+	fake.GetServiceInstancesByServicePlansStub = nil
+	fake.getServiceInstancesByServicePlansReturns = struct {
 		result1 []ccapi.ServiceInstance
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetServiceInstancesReturnsOnCall(i int, result1 []ccapi.ServiceInstance, result2 error) {
-	fake.getServiceInstancesMutex.Lock()
-	defer fake.getServiceInstancesMutex.Unlock()
-	fake.GetServiceInstancesStub = nil
-	if fake.getServiceInstancesReturnsOnCall == nil {
-		fake.getServiceInstancesReturnsOnCall = make(map[int]struct {
+func (fake *FakeCFClient) GetServiceInstancesByServicePlansReturnsOnCall(i int, result1 []ccapi.ServiceInstance, result2 error) {
+	fake.getServiceInstancesByServicePlansMutex.Lock()
+	defer fake.getServiceInstancesByServicePlansMutex.Unlock()
+	fake.GetServiceInstancesByServicePlansStub = nil
+	if fake.getServiceInstancesByServicePlansReturnsOnCall == nil {
+		fake.getServiceInstancesByServicePlansReturnsOnCall = make(map[int]struct {
 			result1 []ccapi.ServiceInstance
 			result2 error
 		})
 	}
-	fake.getServiceInstancesReturnsOnCall[i] = struct {
+	fake.getServiceInstancesByServicePlansReturnsOnCall[i] = struct {
 		result1 []ccapi.ServiceInstance
 		result2 error
 	}{result1, result2}
@@ -248,8 +248,8 @@ func (fake *FakeCFClient) UpgradeServiceInstanceReturnsOnCall(i int, result1 err
 func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getServiceInstancesMutex.RLock()
-	defer fake.getServiceInstancesMutex.RUnlock()
+	fake.getServiceInstancesByServicePlansMutex.RLock()
+	defer fake.getServiceInstancesByServicePlansMutex.RUnlock()
 	fake.getServicePlansMutex.RLock()
 	defer fake.getServicePlansMutex.RUnlock()
 	fake.upgradeServiceInstanceMutex.RLock()

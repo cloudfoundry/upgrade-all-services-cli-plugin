@@ -50,13 +50,21 @@ var _ = Describe("GetServicePlans", func() {
 					"version": "test-mi-version"
 				  }
 				}
-			  ]
+			  ],
+			  "included": {
+				"service_offerings": [
+				  {
+					"guid": "test-offering-guid-1",
+					"name": "test-offering-name-1"
+				  }
+				]
+			  }
 			}
 			`
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
-					ghttp.VerifyRequest("GET", "/v3/service_plans", "per_page=5000&service_broker_names=test-broker-name"),
+					ghttp.VerifyRequest("GET", "/v3/service_plans", "include=service_offering&per_page=5000&service_broker_names=test-broker-name"),
 					ghttp.RespondWith(http.StatusOK, response),
 				),
 			)
@@ -73,7 +81,7 @@ var _ = Describe("GetServicePlans", func() {
 			Expect(requests).To(HaveLen(1))
 			Expect(requests[0].Method).To(Equal("GET"))
 			Expect(requests[0].URL.Path).To(Equal("/v3/service_plans"))
-			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&service_broker_names=test-broker-name"))
+			Expect(requests[0].URL.RawQuery).To(Equal("include=service_offering&per_page=5000&service_broker_names=test-broker-name"))
 
 			By("checking the plan is returned")
 			Expect(actualPlans).To(HaveLen(3))

@@ -9,6 +9,11 @@ import (
 )
 
 type FakeLogger struct {
+	DeactivatedPlanStub        func(ccapi.ServiceInstance)
+	deactivatedPlanMutex       sync.RWMutex
+	deactivatedPlanArgsForCall []struct {
+		arg1 ccapi.ServiceInstance
+	}
 	FinalTotalsStub        func()
 	finalTotalsMutex       sync.RWMutex
 	finalTotalsArgsForCall []struct {
@@ -50,6 +55,38 @@ type FakeLogger struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeLogger) DeactivatedPlan(arg1 ccapi.ServiceInstance) {
+	fake.deactivatedPlanMutex.Lock()
+	fake.deactivatedPlanArgsForCall = append(fake.deactivatedPlanArgsForCall, struct {
+		arg1 ccapi.ServiceInstance
+	}{arg1})
+	stub := fake.DeactivatedPlanStub
+	fake.recordInvocation("DeactivatedPlan", []interface{}{arg1})
+	fake.deactivatedPlanMutex.Unlock()
+	if stub != nil {
+		fake.DeactivatedPlanStub(arg1)
+	}
+}
+
+func (fake *FakeLogger) DeactivatedPlanCallCount() int {
+	fake.deactivatedPlanMutex.RLock()
+	defer fake.deactivatedPlanMutex.RUnlock()
+	return len(fake.deactivatedPlanArgsForCall)
+}
+
+func (fake *FakeLogger) DeactivatedPlanCalls(stub func(ccapi.ServiceInstance)) {
+	fake.deactivatedPlanMutex.Lock()
+	defer fake.deactivatedPlanMutex.Unlock()
+	fake.DeactivatedPlanStub = stub
+}
+
+func (fake *FakeLogger) DeactivatedPlanArgsForCall(i int) ccapi.ServiceInstance {
+	fake.deactivatedPlanMutex.RLock()
+	defer fake.deactivatedPlanMutex.RUnlock()
+	argsForCall := fake.deactivatedPlanArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeLogger) FinalTotals() {
@@ -276,6 +313,8 @@ func (fake *FakeLogger) UpgradeSucceededArgsForCall(i int) (ccapi.ServiceInstanc
 func (fake *FakeLogger) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.deactivatedPlanMutex.RLock()
+	defer fake.deactivatedPlanMutex.RUnlock()
 	fake.finalTotalsMutex.RLock()
 	defer fake.finalTotalsMutex.RUnlock()
 	fake.initialTotalsMutex.RLock()
