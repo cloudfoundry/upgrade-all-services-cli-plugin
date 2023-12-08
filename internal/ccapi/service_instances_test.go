@@ -108,7 +108,7 @@ var _ = Describe("GetServiceInstances", func() {
 					SpaceName:                         "broker-cf-test",
 					OrganizationGUID:                  "69086541-1b9d-449d-b8a4-79029b25e74f",
 					OrganizationName:                  "pivotal",
-					ServicePlanMaintenanceInfoVersion: "", // Not in API response
+					ServicePlanMaintenanceInfoVersion: "",
 				},
 				ccapi.ServiceInstance{
 					GUID:                              "5b528bf8-ac0f-4fed-85d0-0fb5f8588968",
@@ -126,7 +126,7 @@ var _ = Describe("GetServiceInstances", func() {
 					SpaceName:                         "broker-csb-test",
 					OrganizationGUID:                  "529d3532-87a9-11ee-8a24-d354d25d7923",
 					OrganizationName:                  "vmware",
-					ServicePlanMaintenanceInfoVersion: "", // Not in API response
+					ServicePlanMaintenanceInfoVersion: "",
 				},
 			))
 
