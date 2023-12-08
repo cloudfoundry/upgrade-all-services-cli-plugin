@@ -30,67 +30,67 @@ var _ = Describe("GetServicePlans", func() {
 	When("Given a valid brokername", func() {
 		BeforeEach(func() {
 			const response = `
-			{
-			  "resources": [
-				{
-				  "guid": "test-guid-1",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  },
-                  "name": "test-name-1",
-				  "available": true,
-				  "relationships": {
-					"service_offering": {
-					  "data": {
-						"guid": "test-offering-guid-1"
-					  }
-					}
-				  }
-				},
-				{
-				  "guid": "test-guid-2",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  },
-                  "name": "test-name-2",
-                  "available": true,
-				  "relationships": {
-					"service_offering": {
-					  "data": {
-						"guid": "test-offering-guid-1"
-					  }
-					}
-				  }
-				},
-				{
-				  "guid": "test-guid-3",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  },
-                  "name": "test-name-3",
-                  "available": true,
-				  "relationships": {
-					"service_offering": {
-					  "data": {
-						"guid": "test-offering-guid-2"
-					  }
-					}
-				  }
-				}
-			  ],
-			  "included": {
-				"service_offerings": [
-				  {
-					"guid": "test-offering-guid-1",
-					"name": "test-offering-name-1"
-				  },
-				  {
-					"guid": "test-offering-guid-2",
-					"name": "test-offering-name-2"
-				  }
-				]
-			  }
-			}
+{
+    "resources": [
+        {
+            "guid": "test-guid-1",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-1",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-1"
+                    }
+                }
+            }
+        },
+        {
+            "guid": "test-guid-2",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-2",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-1"
+                    }
+                }
+            }
+        },
+        {
+            "guid": "test-guid-3",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-3",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-2"
+                    }
+                }
+            }
+        }
+    ],
+    "included": {
+        "service_offerings": [
+            {
+                "guid": "test-offering-guid-1",
+                "name": "test-offering-name-1"
+            },
+            {
+                "guid": "test-offering-guid-2",
+                "name": "test-offering-name-2"
+            }
+        ]
+    }
+}
 			`
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
