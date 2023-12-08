@@ -12,7 +12,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate . CFClient
 type CFClient interface {
-	GetServiceInstancesByServicePlans([]ccapi.ServicePlan) ([]ccapi.ServiceInstance, error)
+	GetServiceInstancesForServicePlans([]ccapi.ServicePlan) ([]ccapi.ServiceInstance, error)
 	GetServicePlans(string) ([]ccapi.ServicePlan, error)
 	UpgradeServiceInstance(string, string) error
 }
@@ -160,7 +160,7 @@ func discoverServicePlans(api CFClient, brokerName string) ([]ccapi.ServicePlan,
 }
 
 func discoverUpgradeableInstances(api CFClient, servicePlans []ccapi.ServicePlan, log Logger) ([]ccapi.ServiceInstance, int, error) {
-	serviceInstances, err := api.GetServiceInstancesByServicePlans(servicePlans)
+	serviceInstances, err := api.GetServiceInstancesForServicePlans(servicePlans)
 	if err != nil {
 		return nil, 0, err
 	}

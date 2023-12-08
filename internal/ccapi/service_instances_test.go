@@ -74,7 +74,7 @@ var _ = Describe("GetServiceInstances", func() {
 					Name: "fake-service-offering-name-3",
 				},
 			}
-			actualInstances, err := fakeCCAPI.GetServiceInstancesByServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
+			actualInstances, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
 
 			By("checking the valid service instance is returned")
 			Expect(err).NotTo(HaveOccurred())
@@ -142,7 +142,7 @@ var _ = Describe("GetServiceInstances", func() {
 			By("making the appending the plan guids")
 			Expect(requests[0].Method).To(Equal("GET"))
 			Expect(requests[0].URL.Path).To(Equal("/v3/service_instances"))
-			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&fields[service_plan]=name,guid,relationships.service_offering&fields[service_plan.service_offering]=guid,name&service_plan_guids=72abfc2f-5473-4fda-b895-a59d47b8f001,e55b84e8-b953-4a14-98b2-67bec998a632,510da794-1e71-4192-bd39-d974de20b7a4"))
+			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&service_plan_guids=72abfc2f-5473-4fda-b895-a59d47b8f001,e55b84e8-b953-4a14-98b2-67bec998a632,510da794-1e71-4192-bd39-d974de20b7a4"))
 		})
 	})
 
@@ -158,7 +158,7 @@ var _ = Describe("GetServiceInstances", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := fakeCCAPI.GetServiceInstancesByServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
+			_, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
 
 			Expect(err).To(MatchError("error getting service instances: http response: 500"))
 		})

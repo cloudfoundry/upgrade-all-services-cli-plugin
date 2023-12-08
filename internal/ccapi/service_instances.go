@@ -29,12 +29,6 @@ type ServiceInstance struct {
 	ServicePlanDeactivated            bool   `json:"-"`
 }
 
-type includedPlan struct {
-	GUID                string `json:"guid"`
-	Name                string `json:"name"`
-	ServiceOfferingGUID string `jsonry:"relationships.service_offering.data.guid"`
-}
-
 type includedSpace struct {
 	GUID             string `json:"guid"`
 	Name             string `json:"name"`
@@ -46,24 +40,17 @@ type includedOrganization struct {
 	Name string `json:"name"`
 }
 
-type includedServiceOffering struct {
-	GUID string `json:"guid"`
-	Name string `json:"name"`
-}
-
 func BuildQueryParams(planGUIDs []string) string {
-	return fmt.Sprintf("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&fields[service_plan]=name,guid,relationships.service_offering&fields[service_plan.service_offering]=guid,name&service_plan_guids=%s", strings.Join(planGUIDs, ","))
+	return fmt.Sprintf("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&service_plan_guids=%s", strings.Join(planGUIDs, ","))
 }
 
-func (c CCAPI) GetServiceInstancesByServicePlans(plans []ServicePlan) ([]ServiceInstance, error) {
+func (c CCAPI) GetServiceInstancesForServicePlans(plans []ServicePlan) ([]ServiceInstance, error) {
 
 	var receiver struct {
 		Instances []ServiceInstance `json:"resources"`
 		Included  struct {
-			Plans            []includedPlan            `json:"service_plans"`
-			Spaces           []includedSpace           `json:"spaces"`
-			Organizations    []includedOrganization    `json:"organizations"`
-			ServiceOfferings []includedServiceOffering `json:"service_offerings"`
+			Spaces        []includedSpace        `json:"spaces"`
+			Organizations []includedOrganization `json:"organizations"`
 		} `json:"included"`
 	}
 
@@ -75,8 +62,9 @@ func (c CCAPI) GetServiceInstancesByServicePlans(plans []ServicePlan) ([]Service
 
 	// Enrich with service plan, service offering space, and org data
 	spaceGUIDLookup := computeSpaceGUIDLookup(receiver.Included.Spaces, receiver.Included.Organizations)
+	planGUIDLookup := computePlanGUIDLookup(plans)
 	for _, instance := range receiver.Instances {
-		plan := getPlanByGUID(plans, instance.ServicePlanGUID)
+		plan := planGUIDLookup(instance.ServicePlanGUID)
 		instance.ServicePlanName = plan.Name
 		instance.ServiceOfferingGUID = plan.ServiceOffering.GUID
 		instance.ServiceOfferingName = plan.ServiceOffering.Name
@@ -93,13 +81,14 @@ func (c CCAPI) GetServiceInstancesByServicePlans(plans []ServicePlan) ([]Service
 	return instances, nil
 }
 
-func getPlanByGUID(plans []ServicePlan, guid string) ServicePlan {
+func computePlanGUIDLookup(plans []ServicePlan) func(guid string) ServicePlan {
+	plansLookup := make(map[string]ServicePlan, len(plans))
 	for _, plan := range plans {
-		if guid == plan.GUID {
-			return plan
-		}
+		plansLookup[plan.GUID] = plan
 	}
-	return ServicePlan{}
+	return func(guid string) ServicePlan {
+		return plansLookup[guid]
+	}
 }
 
 func computeSpaceGUIDLookup(spaces []includedSpace, orgs []includedOrganization) func(key string) (string, string, string) {
