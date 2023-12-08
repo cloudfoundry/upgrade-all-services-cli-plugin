@@ -9,12 +9,8 @@ type ServicePlan struct {
 	Available              bool
 	Name                   string
 	MaintenanceInfoVersion string
-	ServiceOffering        ServiceOffering
-}
-
-type ServiceOffering struct {
-	GUID string
-	Name string
+	ServiceOfferingGUID    string
+	ServiceOfferingName    string
 }
 
 func (c CCAPI) GetServicePlans(brokerName string) ([]ServicePlan, error) {
@@ -49,21 +45,21 @@ func (c CCAPI) GetServicePlans(brokerName string) ([]ServicePlan, error) {
 
 	for _, p := range receiver.Plans {
 
-		var o ServiceOffering
-		for _, offering := range receiver.IncludedResources.ServiceOfferings {
-			if p.IncludedServiceOfferingGUID == offering.GUID {
-				o.GUID = offering.GUID
-				o.Name = offering.Name
-			}
-		}
-
-		plans = append(plans, ServicePlan{
+		sp := ServicePlan{
 			GUID:                   p.GUID,
 			Available:              p.Available,
 			Name:                   p.Name,
 			MaintenanceInfoVersion: p.MaintenanceInfoVersion,
-			ServiceOffering:        o,
-		})
+		}
+
+		for _, offering := range receiver.IncludedResources.ServiceOfferings {
+			if p.IncludedServiceOfferingGUID == offering.GUID {
+				sp.GUID = offering.GUID
+				sp.Name = offering.Name
+			}
+		}
+
+		plans = append(plans, sp)
 	}
 
 	return plans, nil

@@ -47,10 +47,8 @@ var _ = Describe("GetServiceInstances", func() {
 				Available:              true,
 				Name:                   "db-small",
 				MaintenanceInfoVersion: "1.5.1",
-				ServiceOffering: ccapi.ServiceOffering{
-					GUID: "707cff6a-fc54-471a-9594-442c306fb1d0",
-					Name: "fake-service-offering-name-1",
-				},
+				ServiceOfferingGUID:    "707cff6a-fc54-471a-9594-442c306fb1d0",
+				ServiceOfferingName:    "fake-service-offering-name-1",
 			}
 
 			servicePlanTwo := ccapi.ServicePlan{
@@ -58,10 +56,8 @@ var _ = Describe("GetServiceInstances", func() {
 				Available:              true,
 				Name:                   "postgres-db-f1-micro",
 				MaintenanceInfoVersion: "",
-				ServiceOffering: ccapi.ServiceOffering{
-					GUID: "8551df49-1fb2-4d12-a009-5307176db52c",
-					Name: "fake-service-offering-name-2",
-				},
+				ServiceOfferingGUID:    "8551df49-1fb2-4d12-a009-5307176db52c",
+				ServiceOfferingName:    "fake-service-offering-name-2",
 			}
 
 			servicePlanThree := ccapi.ServicePlan{
@@ -69,10 +65,8 @@ var _ = Describe("GetServiceInstances", func() {
 				Available:              true,
 				Name:                   "small",
 				MaintenanceInfoVersion: "",
-				ServiceOffering: ccapi.ServiceOffering{
-					GUID: "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
-					Name: "fake-service-offering-name-3",
-				},
+				ServiceOfferingGUID:    "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
+				ServiceOfferingName:    "fake-service-offering-name-3",
 			}
 			actualInstances, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
 

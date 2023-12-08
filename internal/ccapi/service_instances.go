@@ -64,8 +64,8 @@ func (c CCAPI) GetServiceInstancesForServicePlans(plans []ServicePlan) ([]Servic
 	for i := range receiver.Instances {
 		plan := planGUIDLookup(receiver.Instances[i].ServicePlanGUID)
 		receiver.Instances[i].ServicePlanName = plan.Name
-		receiver.Instances[i].ServiceOfferingGUID = plan.ServiceOffering.GUID
-		receiver.Instances[i].ServiceOfferingName = plan.ServiceOffering.Name
+		receiver.Instances[i].ServiceOfferingGUID = plan.ServiceOfferingGUID
+		receiver.Instances[i].ServiceOfferingName = plan.ServiceOfferingName
 		receiver.Instances[i].ServicePlanMaintenanceInfoVersion = plan.MaintenanceInfoVersion
 		receiver.Instances[i].ServicePlanDeactivated = !plan.Available
 

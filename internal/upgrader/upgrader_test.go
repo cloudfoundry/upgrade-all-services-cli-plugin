@@ -268,20 +268,16 @@ var _ = Describe("Upgrade", func() {
 						Available:              false,
 						Name:                   "fake-deactivated-plan-1-name",
 						MaintenanceInfoVersion: "1.5.7",
-						ServiceOffering: ccapi.ServiceOffering{
-							GUID: "fake-service-offering-for-plan-1-guid",
-							Name: "fake-service-offering-for-plan-1-name",
-						},
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-1-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-1-name",
 					},
 					{
 						GUID:                   "fake-deactivated-plan-2-guid",
 						Available:              false,
 						Name:                   "fake-deactivated-plan-2-name",
 						MaintenanceInfoVersion: "1.5.7",
-						ServiceOffering: ccapi.ServiceOffering{
-							GUID: "fake-service-offering-for-plan-2-guid",
-							Name: "fake-service-offering-for-plan-2-name",
-						},
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-2-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-2-name",
 					},
 					{
 						GUID:      "fake-deactivated-plan-2-guid",
