@@ -58,27 +58,24 @@ func (c CCAPI) GetServiceInstancesForServicePlans(plans []ServicePlan) ([]Servic
 		return nil, fmt.Errorf("error getting service instances: %s", err)
 	}
 
-	instances := make([]ServiceInstance, 0, len(receiver.Instances))
-
 	// Enrich with service plan, service offering space, and org data
 	spaceGUIDLookup := computeSpaceGUIDLookup(receiver.Included.Spaces, receiver.Included.Organizations)
 	planGUIDLookup := computePlanGUIDLookup(plans)
-	for _, instance := range receiver.Instances {
-		plan := planGUIDLookup(instance.ServicePlanGUID)
-		instance.ServicePlanName = plan.Name
-		instance.ServiceOfferingGUID = plan.ServiceOffering.GUID
-		instance.ServiceOfferingName = plan.ServiceOffering.Name
-		instance.ServicePlanMaintenanceInfoVersion = plan.MaintenanceInfoVersion
-		instance.ServicePlanDeactivated = !plan.Available
+	for i := range receiver.Instances {
+		plan := planGUIDLookup(receiver.Instances[i].ServicePlanGUID)
+		receiver.Instances[i].ServicePlanName = plan.Name
+		receiver.Instances[i].ServiceOfferingGUID = plan.ServiceOffering.GUID
+		receiver.Instances[i].ServiceOfferingName = plan.ServiceOffering.Name
+		receiver.Instances[i].ServicePlanMaintenanceInfoVersion = plan.MaintenanceInfoVersion
+		receiver.Instances[i].ServicePlanDeactivated = !plan.Available
 
-		spaceName, orgGUID, orgName := spaceGUIDLookup(instance.SpaceGUID)
-		instance.SpaceName = spaceName
-		instance.OrganizationGUID = orgGUID
-		instance.OrganizationName = orgName
-		instances = append(instances, instance)
+		spaceName, orgGUID, orgName := spaceGUIDLookup(receiver.Instances[i].SpaceGUID)
+		receiver.Instances[i].SpaceName = spaceName
+		receiver.Instances[i].OrganizationGUID = orgGUID
+		receiver.Instances[i].OrganizationName = orgName
 	}
 
-	return instances, nil
+	return receiver.Instances, nil
 }
 
 func computePlanGUIDLookup(plans []ServicePlan) func(guid string) ServicePlan {
