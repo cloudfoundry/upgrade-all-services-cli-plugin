@@ -43,6 +43,11 @@ func (c CCAPI) GetServicePlans(brokerName string) ([]ServicePlan, error) {
 
 	var plans []ServicePlan
 
+	serviceOfferingLookup := make(map[string]serviceOffering, len(receiver.IncludedResources.ServiceOfferings))
+	for _, offering := range receiver.IncludedResources.ServiceOfferings {
+		serviceOfferingLookup[offering.GUID] = offering
+	}
+
 	for _, p := range receiver.Plans {
 
 		sp := ServicePlan{
@@ -52,12 +57,9 @@ func (c CCAPI) GetServicePlans(brokerName string) ([]ServicePlan, error) {
 			MaintenanceInfoVersion: p.MaintenanceInfoVersion,
 		}
 
-		for _, offering := range receiver.IncludedResources.ServiceOfferings {
-			if p.IncludedServiceOfferingGUID == offering.GUID {
-				sp.GUID = offering.GUID
-				sp.Name = offering.Name
-			}
-		}
+		offering := serviceOfferingLookup[p.IncludedServiceOfferingGUID]
+		sp.ServiceOfferingGUID = offering.GUID
+		sp.ServiceOfferingName = offering.Name
 
 		plans = append(plans, sp)
 	}

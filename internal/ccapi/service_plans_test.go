@@ -36,18 +36,45 @@ var _ = Describe("GetServicePlans", func() {
 				  "guid": "test-guid-1",
 				  "maintenance_info": {
 					"version": "test-mi-version"
+				  },
+                  "name": "test-name-1",
+				  "available": true,
+				  "relationships": {
+					"service_offering": {
+					  "data": {
+						"guid": "test-offering-guid-1"
+					  }
+					}
 				  }
 				},
 				{
 				  "guid": "test-guid-2",
 				  "maintenance_info": {
 					"version": "test-mi-version"
+				  },
+                  "name": "test-name-2",
+                  "available": true,
+				  "relationships": {
+					"service_offering": {
+					  "data": {
+						"guid": "test-offering-guid-1"
+					  }
+					}
 				  }
 				},
 				{
 				  "guid": "test-guid-3",
 				  "maintenance_info": {
 					"version": "test-mi-version"
+				  },
+                  "name": "test-name-3",
+                  "available": true,
+				  "relationships": {
+					"service_offering": {
+					  "data": {
+						"guid": "test-offering-guid-2"
+					  }
+					}
 				  }
 				}
 			  ],
@@ -56,6 +83,10 @@ var _ = Describe("GetServicePlans", func() {
 				  {
 					"guid": "test-offering-guid-1",
 					"name": "test-offering-name-1"
+				  },
+				  {
+					"guid": "test-offering-guid-2",
+					"name": "test-offering-name-2"
 				  }
 				]
 			  }
@@ -85,12 +116,32 @@ var _ = Describe("GetServicePlans", func() {
 
 			By("checking the plan is returned")
 			Expect(actualPlans).To(HaveLen(3))
-			Expect(actualPlans[0].GUID).To(Equal("test-guid-1"))
-			Expect(actualPlans[0].MaintenanceInfoVersion).To(Equal("test-mi-version"))
-			Expect(actualPlans[1].GUID).To(Equal("test-guid-2"))
-			Expect(actualPlans[1].MaintenanceInfoVersion).To(Equal("test-mi-version"))
-			Expect(actualPlans[2].GUID).To(Equal("test-guid-3"))
-			Expect(actualPlans[2].MaintenanceInfoVersion).To(Equal("test-mi-version"))
+			Expect(actualPlans).To(ConsistOf(
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-1",
+					Available:              true,
+					Name:                   "test-name-1",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-1",
+					ServiceOfferingName:    "test-offering-name-1",
+				},
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-2",
+					Available:              true,
+					Name:                   "test-name-2",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-1",
+					ServiceOfferingName:    "test-offering-name-1",
+				},
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-3",
+					Available:              true,
+					Name:                   "test-name-3",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-2",
+					ServiceOfferingName:    "test-offering-name-2",
+				},
+			))
 		})
 	})
 
