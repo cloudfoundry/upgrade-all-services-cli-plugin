@@ -38,9 +38,13 @@ type UpgradeConfig struct {
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
-	servicePlans, err := discoverServicePlans(api, cfg.BrokerName)
+	servicePlans, err := api.GetServicePlans(cfg.BrokerName)
 	if err != nil {
 		return err
+	}
+
+	if len(servicePlans) == 0 {
+		return fmt.Errorf(fmt.Sprintf("no service plans available for broker: %s", cfg.BrokerName))
 	}
 
 	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
@@ -72,15 +76,15 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 }
 
 func checkDeactivatedPlans(log Logger, upgradableInstances []ccapi.ServiceInstance) error {
-	var ii []struct{}
+	var deactivatedPlanFound bool
 	for _, instance := range upgradableInstances {
 		if instance.ServicePlanDeactivated {
-			ii = append(ii, struct{}{})
+			deactivatedPlanFound = true
 			log.DeactivatedPlan(instance)
 		}
 	}
 
-	if len(ii) > 0 {
+	if deactivatedPlanFound {
 		return errors.New(
 			"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
 		)
@@ -145,18 +149,6 @@ func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) erro
 	}
 	log.FinalTotals()
 	return nil
-}
-
-func discoverServicePlans(api CFClient, brokerName string) ([]ccapi.ServicePlan, error) {
-	plans, err := api.GetServicePlans(brokerName)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(plans) == 0 {
-		return nil, fmt.Errorf(fmt.Sprintf("no service plans available for broker: %s", brokerName))
-	}
-	return plans, nil
 }
 
 func discoverUpgradeableInstances(api CFClient, servicePlans []ccapi.ServicePlan, log Logger) ([]ccapi.ServiceInstance, int, error) {

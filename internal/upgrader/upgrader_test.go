@@ -273,15 +273,11 @@ var _ = Describe("Upgrade", func() {
 					},
 					{
 						GUID:                   "fake-deactivated-plan-2-guid",
-						Available:              false,
+						Available:              true,
 						Name:                   "fake-deactivated-plan-2-name",
 						MaintenanceInfoVersion: "1.5.7",
 						ServiceOfferingGUID:    "fake-service-offering-for-plan-2-guid",
 						ServiceOfferingName:    "fake-service-offering-for-plan-2-name",
-					},
-					{
-						GUID:      "fake-deactivated-plan-2-guid",
-						Available: false,
 					},
 				}, nil)
 
@@ -296,7 +292,18 @@ var _ = Describe("Upgrade", func() {
 					ServicePlanMaintenanceInfoVersion: "1.5.7",
 					ServicePlanDeactivated:            true,
 				}
-				fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1}
+				fakeInstance2 = ccapi.ServiceInstance{
+					GUID:                              "fake-instance-guid-2",
+					Name:                              "fake-instance-name-2",
+					UpgradeAvailable:                  true,
+					ServicePlanGUID:                   "fake-deactivated-plan-2-guid",
+					ServicePlanName:                   "fake-deactivated-plan-2-name",
+					ServiceOfferingGUID:               "fake-service-offering-for-plan-2-guid",
+					ServiceOfferingName:               "fake-service-offering-for-plan-2-name",
+					ServicePlanMaintenanceInfoVersion: "1.5.7",
+					ServicePlanDeactivated:            false,
+				}
+				fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2}
 				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 			})
 
@@ -313,12 +320,71 @@ var _ = Describe("Upgrade", func() {
 						"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
 					),
 				)
+
+				Expect(fakeLog.DeactivatedPlanCallCount()).To(Equal(1))
+				Expect(fakeLog.DeactivatedPlanArgsForCall(0)).To(Equal(fakeInstance1))
 			})
 		})
 
 		When("there are no deactivated plans", func() {
-			It("does the next thing", func() {
+			BeforeEach(func() {
+				fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{
+					fakePlan,
+					{
+						GUID:                   "fake-deactivated-plan-1-guid",
+						Available:              true,
+						Name:                   "fake-deactivated-plan-1-name",
+						MaintenanceInfoVersion: "1.5.7",
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-1-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-1-name",
+					},
+					{
+						GUID:                   "fake-deactivated-plan-2-guid",
+						Available:              true,
+						Name:                   "fake-deactivated-plan-2-name",
+						MaintenanceInfoVersion: "1.5.7",
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-2-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-2-name",
+					},
+				}, nil)
 
+				fakeInstance1 = ccapi.ServiceInstance{
+					GUID:                              "fake-instance-guid-1",
+					Name:                              "fake-instance-name-1",
+					UpgradeAvailable:                  false,
+					ServicePlanGUID:                   "fake-deactivated-plan-1-guid",
+					ServicePlanName:                   "fake-deactivated-plan-1-name",
+					ServiceOfferingGUID:               "fake-service-offering-for-plan-1-guid",
+					ServiceOfferingName:               "fake-service-offering-for-plan-1-name",
+					ServicePlanMaintenanceInfoVersion: "1.5.7",
+					ServicePlanDeactivated:            false,
+				}
+				fakeInstance2 = ccapi.ServiceInstance{
+					GUID:                              "fake-instance-guid-2",
+					Name:                              "fake-instance-name-2",
+					UpgradeAvailable:                  true,
+					ServicePlanGUID:                   "fake-deactivated-plan-2-guid",
+					ServicePlanName:                   "fake-deactivated-plan-2-name",
+					ServiceOfferingGUID:               "fake-service-offering-for-plan-2-guid",
+					ServiceOfferingName:               "fake-service-offering-for-plan-2-name",
+					ServicePlanMaintenanceInfoVersion: "1.5.7",
+					ServicePlanDeactivated:            false,
+				}
+				fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2}
+				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
+			})
+
+			Context("all instances are up to date", func() {
+				It("does not return an error", func() {
+					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+						BrokerName:            fakeBrokerName,
+						ParallelUpgrades:      5,
+						CheckDeactivatedPlans: true,
+					})
+
+					Expect(err).To(BeNil())
+					Expect(fakeLog.DeactivatedPlanCallCount()).To(Equal(0))
+				})
 			})
 		})
 	})
