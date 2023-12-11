@@ -25,6 +25,7 @@ type Logger interface {
 	UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration)
 	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
 	DeactivatedPlan(instance ccapi.ServiceInstance)
+	InstanceIsNotUpToDate(instance ccapi.ServiceInstance)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
@@ -65,7 +66,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		return nil
 	case cfg.CheckUpToDate:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performCheckUpToDate(upgradableInstances, log)
+		return checkInstancesAreUpToDateWithPlans(log, upgradableInstances)
 	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
@@ -87,6 +88,27 @@ func checkDeactivatedPlans(log Logger, upgradableInstances []ccapi.ServiceInstan
 	if deactivatedPlanFound {
 		return errors.New(
 			"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
+		)
+	}
+	return nil
+}
+
+func checkInstancesAreUpToDateWithPlans(log Logger, upgradableInstances []ccapi.ServiceInstance) error {
+	var instanceNotUpToDateFound bool
+	for _, instance := range upgradableInstances {
+		if instance.ServicePlanDeactivated {
+			continue
+		}
+
+		if instance.MaintenanceInfoVersion != instance.ServicePlanMaintenanceInfoVersion {
+			instanceNotUpToDateFound = true
+			log.InstanceIsNotUpToDate(instance)
+		}
+	}
+
+	if instanceNotUpToDateFound {
+		return errors.New(
+			"discovered upgradable instances that are not up to date. Review the log to collect information and update them",
 		)
 	}
 	return nil
@@ -131,17 +153,6 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	return nil
 }
 
-func performCheckUpToDate(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
-	err := performDryRun(upgradableInstances, log)
-	if err != nil {
-		return fmt.Errorf("check up-to-date failed because dry-run returned the following error: %w", err)
-	}
-	if len(upgradableInstances) > 0 {
-		return fmt.Errorf("check up-to-date failed: found %d instances which are not up-to-date", len(upgradableInstances))
-	}
-	return nil
-}
-
 func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
 	log.Printf("the following service instances would be upgraded:")
 	for _, i := range upgradableInstances {
@@ -159,16 +170,17 @@ func discoverUpgradeableInstances(api CFClient, servicePlans []ccapi.ServicePlan
 
 	var upgradableInstances []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
-		if i.UpgradeAvailable && isCreateFailed(i.LastOperationType, i.LastOperationState) {
-			log.SkippingInstance(i)
-		} else if i.UpgradeAvailable {
-			upgradableInstances = append(upgradableInstances, i)
+		if !i.UpgradeAvailable {
+			continue
 		}
+
+		if ccapi.HasInstanceCreateFailedStatus(i) {
+			log.SkippingInstance(i)
+			continue
+		}
+
+		upgradableInstances = append(upgradableInstances, i)
 	}
 
 	return upgradableInstances, len(serviceInstances), nil
-}
-
-func isCreateFailed(operationType, operationState string) bool {
-	return operationType == "create" && operationState == "failed"
 }

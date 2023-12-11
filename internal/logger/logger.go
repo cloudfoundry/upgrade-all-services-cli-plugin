@@ -71,6 +71,27 @@ func (l *Logger) DeactivatedPlan(instance ccapi.ServiceInstance) {
 	)
 }
 
+func (l *Logger) InstanceIsNotUpToDate(instance ccapi.ServiceInstance) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	l.skipped++
+	l.printf(
+		"skipping instance: %q guid: %q version: %q Plan: %q guid: %q version: %q Offering: %q Offering guid: %q Upgrade Available: %t Last Operation: Type: %q State: %q",
+		instance.Name,
+		instance.GUID,
+		instance.MaintenanceInfoVersion,
+		instance.ServicePlanName,
+		instance.ServicePlanGUID,
+		instance.ServicePlanMaintenanceInfoVersion,
+		instance.ServiceOfferingName,
+		instance.ServiceOfferingGUID,
+		instance.UpgradeAvailable,
+		instance.LastOperationType,
+		instance.LastOperationState,
+	)
+}
+
 func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance) {
 	l.lock.Lock()
 	defer l.lock.Unlock()

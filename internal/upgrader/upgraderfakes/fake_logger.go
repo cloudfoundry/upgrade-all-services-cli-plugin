@@ -24,6 +24,11 @@ type FakeLogger struct {
 		arg1 int
 		arg2 int
 	}
+	InstanceIsNotUpToDateStub        func(ccapi.ServiceInstance)
+	instanceIsNotUpToDateMutex       sync.RWMutex
+	instanceIsNotUpToDateArgsForCall []struct {
+		arg1 ccapi.ServiceInstance
+	}
 	PrintfStub        func(string, ...any)
 	printfMutex       sync.RWMutex
 	printfArgsForCall []struct {
@@ -144,6 +149,38 @@ func (fake *FakeLogger) InitialTotalsArgsForCall(i int) (int, int) {
 	defer fake.initialTotalsMutex.RUnlock()
 	argsForCall := fake.initialTotalsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeLogger) InstanceIsNotUpToDate(arg1 ccapi.ServiceInstance) {
+	fake.instanceIsNotUpToDateMutex.Lock()
+	fake.instanceIsNotUpToDateArgsForCall = append(fake.instanceIsNotUpToDateArgsForCall, struct {
+		arg1 ccapi.ServiceInstance
+	}{arg1})
+	stub := fake.InstanceIsNotUpToDateStub
+	fake.recordInvocation("InstanceIsNotUpToDate", []interface{}{arg1})
+	fake.instanceIsNotUpToDateMutex.Unlock()
+	if stub != nil {
+		fake.InstanceIsNotUpToDateStub(arg1)
+	}
+}
+
+func (fake *FakeLogger) InstanceIsNotUpToDateCallCount() int {
+	fake.instanceIsNotUpToDateMutex.RLock()
+	defer fake.instanceIsNotUpToDateMutex.RUnlock()
+	return len(fake.instanceIsNotUpToDateArgsForCall)
+}
+
+func (fake *FakeLogger) InstanceIsNotUpToDateCalls(stub func(ccapi.ServiceInstance)) {
+	fake.instanceIsNotUpToDateMutex.Lock()
+	defer fake.instanceIsNotUpToDateMutex.Unlock()
+	fake.InstanceIsNotUpToDateStub = stub
+}
+
+func (fake *FakeLogger) InstanceIsNotUpToDateArgsForCall(i int) ccapi.ServiceInstance {
+	fake.instanceIsNotUpToDateMutex.RLock()
+	defer fake.instanceIsNotUpToDateMutex.RUnlock()
+	argsForCall := fake.instanceIsNotUpToDateArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeLogger) Printf(arg1 string, arg2 ...any) {
@@ -319,6 +356,8 @@ func (fake *FakeLogger) Invocations() map[string][][]interface{} {
 	defer fake.finalTotalsMutex.RUnlock()
 	fake.initialTotalsMutex.RLock()
 	defer fake.initialTotalsMutex.RUnlock()
+	fake.instanceIsNotUpToDateMutex.RLock()
+	defer fake.instanceIsNotUpToDateMutex.RUnlock()
 	fake.printfMutex.RLock()
 	defer fake.printfMutex.RUnlock()
 	fake.skippingInstanceMutex.RLock()

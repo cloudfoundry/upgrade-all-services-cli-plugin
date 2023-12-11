@@ -55,6 +55,13 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-service-instance-1" guid: "my-service-instance-guid-1" Deactivated Plan: "fake-plan-name-1" Offering: "fake-soffer-name-1" Offering guid: "fake-soffer-guid-1" Upgrade Available: true Last Operation: Type: "last-operation-type-1" State: "last-operation-state-1"\n`))
 	})
 
+	It("can log that there are instances not up to date", func() {
+		result := captureStdout(func() {
+			l.InstanceIsNotUpToDate(indexedInstance(1, true))
+		})
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-service-instance-1" guid: "my-service-instance-guid-1" version: "fake-version-1" Plan: "fake-plan-name-1" guid: "fake-plan-guid-1" version: "fake-plan-version-1" Offering: "fake-soffer-name-1" Offering guid: "fake-soffer-guid-1" Upgrade Available: true Last Operation: Type: "last-operation-type-1" State: "last-operation-state-1"\n`))
+	})
+
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
 			l.UpgradeStarting(upgradeableInstance(1))
