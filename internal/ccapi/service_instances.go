@@ -25,15 +25,8 @@ type ServiceInstance struct {
 	OrganizationGUID    string `json:"-"`
 	OrganizationName    string `json:"-"`
 
-	// Can't be retrieved from CF API using `fields` query parameter
-	// We populate this field in Upgrade function in internal/upgrader/upgrader.go
-	PlanMaintenanceInfoVersion string `json:"-"`
-}
-
-type includedPlan struct {
-	GUID                string `json:"guid"`
-	Name                string `json:"name"`
-	ServiceOfferingGUID string `jsonry:"relationships.service_offering.data.guid"`
+	ServicePlanMaintenanceInfoVersion string `json:"-"`
+	ServicePlanDeactivated            bool   `json:"-"`
 }
 
 type includedSpace struct {
@@ -47,42 +40,34 @@ type includedOrganization struct {
 	Name string `json:"name"`
 }
 
-type includedServiceOffering struct {
-	GUID string `json:"guid"`
-	Name string `json:"name"`
-}
-
 func BuildQueryParams(planGUIDs []string) string {
-	return fmt.Sprintf("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&fields[service_plan]=name,guid,relationships.service_offering&fields[service_plan.service_offering]=guid,name&service_plan_guids=%s", strings.Join(planGUIDs, ","))
+	return fmt.Sprintf("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&service_plan_guids=%s", strings.Join(planGUIDs, ","))
 }
 
-func (c CCAPI) GetServiceInstances(planGUIDs []string) ([]ServiceInstance, error) {
-	if len(planGUIDs) == 0 {
-		return nil, fmt.Errorf("no service_plan_guids specified")
-	}
+func (c CCAPI) GetServiceInstancesForServicePlans(plans []ServicePlan) ([]ServiceInstance, error) {
 
 	var receiver struct {
 		Instances []ServiceInstance `json:"resources"`
 		Included  struct {
-			Plans            []includedPlan            `json:"service_plans"`
-			Spaces           []includedSpace           `json:"spaces"`
-			Organizations    []includedOrganization    `json:"organizations"`
-			ServiceOfferings []includedServiceOffering `json:"service_offerings"`
+			Spaces        []includedSpace        `json:"spaces"`
+			Organizations []includedOrganization `json:"organizations"`
 		} `json:"included"`
 	}
 
-	if err := c.requester.Get("v3/service_instances?"+BuildQueryParams(planGUIDs), &receiver); err != nil {
+	if err := c.requester.Get("v3/service_instances?"+BuildQueryParams(getPlansGUIDs(plans)), &receiver); err != nil {
 		return nil, fmt.Errorf("error getting service instances: %s", err)
 	}
 
 	// Enrich with service plan, service offering space, and org data
-	servicePlanGUIDLookup := computeServicePlanGUIDLookup(receiver.Included.Plans, receiver.Included.ServiceOfferings)
 	spaceGUIDLookup := computeSpaceGUIDLookup(receiver.Included.Spaces, receiver.Included.Organizations)
+	planGUIDLookup := computePlanGUIDLookup(plans)
 	for i := range receiver.Instances {
-		planName, offeringGUID, offeringName := servicePlanGUIDLookup(receiver.Instances[i].ServicePlanGUID)
-		receiver.Instances[i].ServicePlanName = planName
-		receiver.Instances[i].ServiceOfferingGUID = offeringGUID
-		receiver.Instances[i].ServiceOfferingName = offeringName
+		plan := planGUIDLookup(receiver.Instances[i].ServicePlanGUID)
+		receiver.Instances[i].ServicePlanName = plan.Name
+		receiver.Instances[i].ServiceOfferingGUID = plan.ServiceOfferingGUID
+		receiver.Instances[i].ServiceOfferingName = plan.ServiceOfferingName
+		receiver.Instances[i].ServicePlanMaintenanceInfoVersion = plan.MaintenanceInfoVersion
+		receiver.Instances[i].ServicePlanDeactivated = !plan.Available
 
 		spaceName, orgGUID, orgName := spaceGUIDLookup(receiver.Instances[i].SpaceGUID)
 		receiver.Instances[i].SpaceName = spaceName
@@ -93,29 +78,13 @@ func (c CCAPI) GetServiceInstances(planGUIDs []string) ([]ServiceInstance, error
 	return receiver.Instances, nil
 }
 
-func computeServicePlanGUIDLookup(plans []includedPlan, offerings []includedServiceOffering) func(key string) (string, string, string) {
-	offeringLookup := make(map[string]string)
-	for _, o := range offerings {
-		offeringLookup[o.GUID] = o.Name
+func computePlanGUIDLookup(plans []ServicePlan) func(guid string) ServicePlan {
+	plansLookup := make(map[string]ServicePlan, len(plans))
+	for _, plan := range plans {
+		plansLookup[plan.GUID] = plan
 	}
-
-	type entry struct {
-		planName     string
-		offeringGUID string
-		offeringName string
-	}
-	planLookup := make(map[string]entry)
-	for _, p := range plans {
-		planLookup[p.GUID] = entry{
-			planName:     p.Name,
-			offeringGUID: p.ServiceOfferingGUID,
-			offeringName: offeringLookup[p.ServiceOfferingGUID],
-		}
-	}
-
-	return func(planGUID string) (string, string, string) {
-		e := planLookup[planGUID]
-		return e.planName, e.offeringGUID, e.offeringName
+	return func(guid string) ServicePlan {
+		return plansLookup[guid]
 	}
 }
 
@@ -143,4 +112,12 @@ func computeSpaceGUIDLookup(spaces []includedSpace, orgs []includedOrganization)
 		e := spaceLookup[spaceGUID]
 		return e.spaceName, e.orgGUID, e.orgName
 	}
+}
+
+func getPlansGUIDs(plans []ServicePlan) []string {
+	guids := make([]string, 0, len(plans))
+	for _, plan := range plans {
+		guids = append(guids, plan.GUID)
+	}
+	return guids
 }

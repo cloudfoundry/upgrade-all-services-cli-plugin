@@ -30,33 +30,72 @@ var _ = Describe("GetServicePlans", func() {
 	When("Given a valid brokername", func() {
 		BeforeEach(func() {
 			const response = `
-			{
-			  "resources": [
-				{
-				  "guid": "test-guid-1",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  }
-				},
-				{
-				  "guid": "test-guid-2",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  }
-				},
-				{
-				  "guid": "test-guid-3",
-				  "maintenance_info": {
-					"version": "test-mi-version"
-				  }
-				}
-			  ]
-			}
+{
+    "resources": [
+        {
+            "guid": "test-guid-1",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-1",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-1"
+                    }
+                }
+            }
+        },
+        {
+            "guid": "test-guid-2",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-2",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-1"
+                    }
+                }
+            }
+        },
+        {
+            "guid": "test-guid-3",
+            "maintenance_info": {
+                "version": "test-mi-version"
+            },
+            "name": "test-name-3",
+            "available": true,
+            "relationships": {
+                "service_offering": {
+                    "data": {
+                        "guid": "test-offering-guid-2"
+                    }
+                }
+            }
+        }
+    ],
+    "included": {
+        "service_offerings": [
+            {
+                "guid": "test-offering-guid-1",
+                "name": "test-offering-name-1"
+            },
+            {
+                "guid": "test-offering-guid-2",
+                "name": "test-offering-name-2"
+            }
+        ]
+    }
+}
 			`
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
-					ghttp.VerifyRequest("GET", "/v3/service_plans", "per_page=5000&service_broker_names=test-broker-name"),
+					ghttp.VerifyRequest("GET", "/v3/service_plans", "include=service_offering&per_page=5000&service_broker_names=test-broker-name"),
 					ghttp.RespondWith(http.StatusOK, response),
 				),
 			)
@@ -73,16 +112,36 @@ var _ = Describe("GetServicePlans", func() {
 			Expect(requests).To(HaveLen(1))
 			Expect(requests[0].Method).To(Equal("GET"))
 			Expect(requests[0].URL.Path).To(Equal("/v3/service_plans"))
-			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&service_broker_names=test-broker-name"))
+			Expect(requests[0].URL.RawQuery).To(Equal("include=service_offering&per_page=5000&service_broker_names=test-broker-name"))
 
 			By("checking the plan is returned")
 			Expect(actualPlans).To(HaveLen(3))
-			Expect(actualPlans[0].GUID).To(Equal("test-guid-1"))
-			Expect(actualPlans[0].MaintenanceInfoVersion).To(Equal("test-mi-version"))
-			Expect(actualPlans[1].GUID).To(Equal("test-guid-2"))
-			Expect(actualPlans[1].MaintenanceInfoVersion).To(Equal("test-mi-version"))
-			Expect(actualPlans[2].GUID).To(Equal("test-guid-3"))
-			Expect(actualPlans[2].MaintenanceInfoVersion).To(Equal("test-mi-version"))
+			Expect(actualPlans).To(ConsistOf(
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-1",
+					Available:              true,
+					Name:                   "test-name-1",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-1",
+					ServiceOfferingName:    "test-offering-name-1",
+				},
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-2",
+					Available:              true,
+					Name:                   "test-name-2",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-1",
+					ServiceOfferingName:    "test-offering-name-1",
+				},
+				ccapi.ServicePlan{
+					GUID:                   "test-guid-3",
+					Available:              true,
+					Name:                   "test-name-3",
+					MaintenanceInfoVersion: "test-mi-version",
+					ServiceOfferingGUID:    "test-offering-guid-2",
+					ServiceOfferingName:    "test-offering-name-2",
+				},
+			))
 		})
 	})
 

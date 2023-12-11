@@ -48,6 +48,13 @@ var _ = Describe("Logger", func() {
 		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "create-failed-instance" guid: "create-failed-instance-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
 	})
 
+	It("can log that there are deactivated plans", func() {
+		result := captureStdout(func() {
+			l.DeactivatedPlan(instanceWithDeactivatedPlan(1))
+		})
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-service-instance-1" guid: "my-service-instance-guid-1" Deactivated Plan: "fake-plan-name-1" Offering: "fake-soffer-name-1" Offering guid: "fake-soffer-guid-1" Upgrade Available: true Last Operation: Type: "last-operation-type-1" State: "last-operation-state-1"\n`))
+	})
+
 	It("can log the start of an upgrade", func() {
 		result := captureStdout(func() {
 			l.UpgradeStarting(upgradeableInstance(1))
@@ -144,6 +151,12 @@ func upToDateInstance(index int) ccapi.ServiceInstance {
 	return indexedInstance(index, false)
 }
 
+func instanceWithDeactivatedPlan(index int) ccapi.ServiceInstance {
+	i := indexedInstance(index, true)
+	i.ServicePlanDeactivated = true
+	return i
+}
+
 func indexedInstance(index int, upgradeAvailable bool) ccapi.ServiceInstance {
 	return ccapi.ServiceInstance{
 		Name: formatValue("my-service-instance", index),
@@ -152,8 +165,8 @@ func indexedInstance(index int, upgradeAvailable bool) ccapi.ServiceInstance {
 		ServicePlanGUID: formatValue("fake-plan-guid", index),
 		SpaceGUID:       formatValue("fake-space-guid", index),
 
-		MaintenanceInfoVersion:     formatValue("fake-version", index),
-		PlanMaintenanceInfoVersion: formatValue("fake-plan-version", index),
+		MaintenanceInfoVersion:            formatValue("fake-version", index),
+		ServicePlanMaintenanceInfoVersion: formatValue("fake-plan-version", index),
 
 		UpgradeAvailable:   upgradeAvailable,
 		LastOperationType:  formatValue("last-operation-type", index),

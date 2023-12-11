@@ -35,4 +35,6 @@ Options:
     -parallel - number of upgrades to run in parallel (defaults to 10)
     -loghttp  - log HTTP requests and responses
     -dry-run  - print the service instances that would be upgraded
+    -check-up-to-date - checks and fails if any service instance is not up-to-date - implies a dry-run
+    -check-deactivated-plans - checks whether any of the plans have been deactivated. If any deactivated plans are found, the command will fail
 ```

@@ -20,4 +20,8 @@ const (
 	checkUpToDateDefault     = false
 	checkUpToDateFlag        = "check-up-to-date"
 	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date - implies a dry-run"
+
+	checkDeactivatedPlansDefault     = false
+	checkDeactivatedPlansFlag        = "check-deactivated-plans"
+	checkDeactivatedPlansDescription = "checks whether any of the plans have been deactivated. If any deactivated plans are found, the command will fail"
 )

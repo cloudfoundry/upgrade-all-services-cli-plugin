@@ -28,5 +28,11 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		reqr.Logger = logr
 	}
 
-	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), cfg.BrokerName, cfg.ParallelUpgrades, cfg.DryRun, cfg.CheckUpToDate, logr)
+	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), logr, upgrader.UpgradeConfig{
+		BrokerName:            cfg.BrokerName,
+		ParallelUpgrades:      cfg.ParallelUpgrades,
+		DryRun:                cfg.DryRun,
+		CheckUpToDate:         cfg.CheckUpToDate,
+		CheckDeactivatedPlans: cfg.CheckDeactivatedPlans,
+	})
 }

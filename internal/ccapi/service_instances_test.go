@@ -31,72 +31,102 @@ var _ = Describe("GetServiceInstances", func() {
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
-					ghttp.VerifyRequest("GET", "/v3/service_instances", ccapi.BuildQueryParams([]string{"test-plan-guid", "another-test-guid"})),
+					ghttp.VerifyRequest("GET", "/v3/service_instances", ccapi.BuildQueryParams([]string{
+						"72abfc2f-5473-4fda-b895-a59d47b8f001",
+						"e55b84e8-b953-4a14-98b2-67bec998a632",
+						"510da794-1e71-4192-bd39-d974de20b7a4",
+					})),
 					ghttp.RespondWith(http.StatusOK, fakeResponse()),
 				),
 			)
 		})
 
 		It("returns instances from the given plans", func() {
-			actualInstances, err := fakeCCAPI.GetServiceInstances([]string{"test-plan-guid", "another-test-guid"})
+			servicePlanOne := ccapi.ServicePlan{
+				GUID:                   "72abfc2f-5473-4fda-b895-a59d47b8f001",
+				Available:              true,
+				Name:                   "db-small",
+				MaintenanceInfoVersion: "1.5.1",
+				ServiceOfferingGUID:    "707cff6a-fc54-471a-9594-442c306fb1d0",
+				ServiceOfferingName:    "fake-service-offering-name-1",
+			}
+
+			servicePlanTwo := ccapi.ServicePlan{
+				GUID:                   "e55b84e8-b953-4a14-98b2-67bec998a632",
+				Available:              true,
+				Name:                   "postgres-db-f1-micro",
+				MaintenanceInfoVersion: "",
+				ServiceOfferingGUID:    "8551df49-1fb2-4d12-a009-5307176db52c",
+				ServiceOfferingName:    "fake-service-offering-name-2",
+			}
+
+			servicePlanThree := ccapi.ServicePlan{
+				GUID:                   "510da794-1e71-4192-bd39-d974de20b7a4",
+				Available:              true,
+				Name:                   "small",
+				MaintenanceInfoVersion: "",
+				ServiceOfferingGUID:    "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
+				ServiceOfferingName:    "fake-service-offering-name-3",
+			}
+			actualInstances, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
 
 			By("checking the valid service instance is returned")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(actualInstances).To(ConsistOf(
 				ccapi.ServiceInstance{
-					GUID:                       "c5518540-7353-4d66-bae7-e07dfed8dd70",
-					Name:                       "fake-service-instance-name-1",
-					UpgradeAvailable:           false,
-					LastOperationType:          "create",
-					LastOperationState:         "succeeded",
-					LastOperationDescription:   "Instance provisioning completed",
-					MaintenanceInfoVersion:     "2.10.14-build.3",
-					ServicePlanGUID:            "72abfc2f-5473-4fda-b895-a59d47b8f001",
-					ServicePlanName:            "db-small",
-					ServiceOfferingGUID:        "707cff6a-fc54-471a-9594-442c306fb1d0",
-					ServiceOfferingName:        "fake-service-offering-name-1",
-					SpaceGUID:                  "dcf1a90a-47ee-4ba2-a369-255aa00c2de0",
-					SpaceName:                  "broker-cf-test",
-					OrganizationGUID:           "69086541-1b9d-449d-b8a4-79029b25e74f",
-					OrganizationName:           "pivotal",
-					PlanMaintenanceInfoVersion: "", // Not in API response
+					GUID:                              "c5518540-7353-4d66-bae7-e07dfed8dd70",
+					Name:                              "fake-service-instance-name-1",
+					UpgradeAvailable:                  false,
+					LastOperationType:                 "create",
+					LastOperationState:                "succeeded",
+					LastOperationDescription:          "Instance provisioning completed",
+					MaintenanceInfoVersion:            "2.10.14-build.3",
+					ServicePlanGUID:                   "72abfc2f-5473-4fda-b895-a59d47b8f001",
+					ServicePlanName:                   "db-small",
+					ServiceOfferingGUID:               "707cff6a-fc54-471a-9594-442c306fb1d0",
+					ServiceOfferingName:               "fake-service-offering-name-1",
+					SpaceGUID:                         "dcf1a90a-47ee-4ba2-a369-255aa00c2de0",
+					SpaceName:                         "broker-cf-test",
+					OrganizationGUID:                  "69086541-1b9d-449d-b8a4-79029b25e74f",
+					OrganizationName:                  "pivotal",
+					ServicePlanMaintenanceInfoVersion: "1.5.1",
 				},
 				ccapi.ServiceInstance{
-					GUID:                       "3358305d-7402-48b3-80a7-e0148a38675b",
-					Name:                       "fake-service-instance-name-2",
-					UpgradeAvailable:           false,
-					LastOperationType:          "create",
-					LastOperationState:         "succeeded",
-					LastOperationDescription:   "",
-					MaintenanceInfoVersion:     "",
-					ServicePlanGUID:            "e55b84e8-b953-4a14-98b2-67bec998a632",
-					ServicePlanName:            "postgres-db-f1-micro",
-					ServiceOfferingGUID:        "8551df49-1fb2-4d12-a009-5307176db52c",
-					ServiceOfferingName:        "fake-service-offering-name-2",
-					SpaceGUID:                  "dcf1a90a-47ee-4ba2-a369-255aa00c2de0",
-					SpaceName:                  "broker-cf-test",
-					OrganizationGUID:           "69086541-1b9d-449d-b8a4-79029b25e74f",
-					OrganizationName:           "pivotal",
-					PlanMaintenanceInfoVersion: "", // Not in API response
+					GUID:                              "3358305d-7402-48b3-80a7-e0148a38675b",
+					Name:                              "fake-service-instance-name-2",
+					UpgradeAvailable:                  false,
+					LastOperationType:                 "create",
+					LastOperationState:                "succeeded",
+					LastOperationDescription:          "",
+					MaintenanceInfoVersion:            "",
+					ServicePlanGUID:                   "e55b84e8-b953-4a14-98b2-67bec998a632",
+					ServicePlanName:                   "postgres-db-f1-micro",
+					ServiceOfferingGUID:               "8551df49-1fb2-4d12-a009-5307176db52c",
+					ServiceOfferingName:               "fake-service-offering-name-2",
+					SpaceGUID:                         "dcf1a90a-47ee-4ba2-a369-255aa00c2de0",
+					SpaceName:                         "broker-cf-test",
+					OrganizationGUID:                  "69086541-1b9d-449d-b8a4-79029b25e74f",
+					OrganizationName:                  "pivotal",
+					ServicePlanMaintenanceInfoVersion: "",
 				},
 				ccapi.ServiceInstance{
-					GUID:                       "5b528bf8-ac0f-4fed-85d0-0fb5f8588968",
-					Name:                       "fake-service-instance-name-3",
-					UpgradeAvailable:           true,
-					LastOperationType:          "update",
-					LastOperationState:         "succeeded",
-					LastOperationDescription:   "update succeeded",
-					MaintenanceInfoVersion:     "1.3.9",
-					ServicePlanGUID:            "510da794-1e71-4192-bd39-d974de20b7a4",
-					ServicePlanName:            "small",
-					ServiceOfferingGUID:        "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
-					ServiceOfferingName:        "fake-service-offering-name-3",
-					SpaceGUID:                  "bbd00d42-8577-11ee-9b75-6feb4799d316",
-					SpaceName:                  "broker-csb-test",
-					OrganizationGUID:           "529d3532-87a9-11ee-8a24-d354d25d7923",
-					OrganizationName:           "vmware",
-					PlanMaintenanceInfoVersion: "", // Not in API response
+					GUID:                              "5b528bf8-ac0f-4fed-85d0-0fb5f8588968",
+					Name:                              "fake-service-instance-name-3",
+					UpgradeAvailable:                  true,
+					LastOperationType:                 "update",
+					LastOperationState:                "succeeded",
+					LastOperationDescription:          "update succeeded",
+					MaintenanceInfoVersion:            "1.3.9",
+					ServicePlanGUID:                   "510da794-1e71-4192-bd39-d974de20b7a4",
+					ServicePlanName:                   "small",
+					ServiceOfferingGUID:               "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
+					ServiceOfferingName:               "fake-service-offering-name-3",
+					SpaceGUID:                         "bbd00d42-8577-11ee-9b75-6feb4799d316",
+					SpaceName:                         "broker-csb-test",
+					OrganizationGUID:                  "529d3532-87a9-11ee-8a24-d354d25d7923",
+					OrganizationName:                  "vmware",
+					ServicePlanMaintenanceInfoVersion: "",
 				},
 			))
 
@@ -106,16 +136,7 @@ var _ = Describe("GetServiceInstances", func() {
 			By("making the appending the plan guids")
 			Expect(requests[0].Method).To(Equal("GET"))
 			Expect(requests[0].URL.Path).To(Equal("/v3/service_instances"))
-			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&fields[service_plan]=name,guid,relationships.service_offering&fields[service_plan.service_offering]=guid,name&service_plan_guids=test-plan-guid,another-test-guid"))
-		})
-	})
-
-	When("no plan GUIDs are given", func() {
-		It("returns an error", func() {
-			actualInstances, err := fakeCCAPI.GetServiceInstances([]string{})
-
-			Expect(err).To(MatchError("no service_plan_guids specified"))
-			Expect(actualInstances).To(BeNil())
+			Expect(requests[0].URL.RawQuery).To(Equal("per_page=5000&fields[space]=name,guid,relationships.organization&fields[space.organization]=name,guid&service_plan_guids=72abfc2f-5473-4fda-b895-a59d47b8f001,e55b84e8-b953-4a14-98b2-67bec998a632,510da794-1e71-4192-bd39-d974de20b7a4"))
 		})
 	})
 
@@ -131,7 +152,7 @@ var _ = Describe("GetServiceInstances", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := fakeCCAPI.GetServiceInstances([]string{"test-guid"})
+			_, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
 
 			Expect(err).To(MatchError("error getting service instances: http response: 500"))
 		})

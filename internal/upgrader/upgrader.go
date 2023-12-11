@@ -1,6 +1,7 @@
 package upgrader
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate . CFClient
 type CFClient interface {
-	GetServiceInstances([]string) ([]ccapi.ServiceInstance, error)
+	GetServiceInstancesForServicePlans([]ccapi.ServicePlan) ([]ccapi.ServiceInstance, error)
 	GetServicePlans(string) ([]ccapi.ServicePlan, error)
 	UpgradeServiceInstance(string, string) error
 }
@@ -23,43 +24,75 @@ type Logger interface {
 	UpgradeStarting(instance ccapi.ServiceInstance)
 	UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration)
 	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
+	DeactivatedPlan(instance ccapi.ServiceInstance)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	FinalTotals()
 }
 
-func Upgrade(api CFClient, brokerName string, parallelUpgrades int, dryRun, checkUpToDate bool, log Logger) error {
-	planVersions, err := discoverServicePlans(api, brokerName)
+type UpgradeConfig struct {
+	BrokerName            string
+	ParallelUpgrades      int
+	DryRun                bool
+	CheckUpToDate         bool
+	CheckDeactivatedPlans bool
+}
+
+func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
+	servicePlans, err := api.GetServicePlans(cfg.BrokerName)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("discovering service instances for broker: %s", brokerName)
-	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, keys(planVersions), log)
+	if len(servicePlans) == 0 {
+		return fmt.Errorf(fmt.Sprintf("no service plans available for broker: %s", cfg.BrokerName))
+	}
 
-	// See internal/ccapi/service_instances.go to understand why we are setting this value here
-	for i := range upgradableInstances {
-		upgradableInstances[i].PlanMaintenanceInfoVersion = planVersions[upgradableInstances[i].ServicePlanGUID]
+	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
+	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, servicePlans, log)
+	if err != nil {
+		return err
+	}
+
+	if cfg.CheckDeactivatedPlans {
+		if err := checkDeactivatedPlans(log, upgradableInstances); err != nil {
+			return err
+		}
 	}
 
 	switch {
-	case err != nil:
-		return err
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
-	case checkUpToDate:
+	case cfg.CheckUpToDate:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performCheckUpToDate(upgradableInstances, log)
-	case dryRun:
+	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performDryRun(upgradableInstances, log)
 	default:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performUpgrade(api, upgradableInstances, planVersions, parallelUpgrades, log)
+		return performUpgrade(api, upgradableInstances, cfg.ParallelUpgrades, log)
 	}
 }
 
-func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, planVersions map[string]string, parallelUpgrades int, log Logger) error {
+func checkDeactivatedPlans(log Logger, upgradableInstances []ccapi.ServiceInstance) error {
+	var deactivatedPlanFound bool
+	for _, instance := range upgradableInstances {
+		if instance.ServicePlanDeactivated {
+			deactivatedPlanFound = true
+			log.DeactivatedPlan(instance)
+		}
+	}
+
+	if deactivatedPlanFound {
+		return errors.New(
+			"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
+		)
+	}
+	return nil
+}
+
+func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, parallelUpgrades int, log Logger) error {
 	type upgradeTask struct {
 		UpgradeableIndex       int
 		ServiceInstanceName    string
@@ -74,7 +107,7 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 				UpgradeableIndex:       i,
 				ServiceInstanceName:    instance.Name,
 				ServiceInstanceGUID:    instance.GUID,
-				MaintenanceInfoVersion: planVersions[instance.ServicePlanGUID],
+				MaintenanceInfoVersion: instance.ServicePlanMaintenanceInfoVersion,
 			}
 		}
 		close(upgradeQueue)
@@ -118,27 +151,8 @@ func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) erro
 	return nil
 }
 
-func discoverServicePlans(api CFClient, brokerName string) (map[string]string, error) {
-	plans, err := api.GetServicePlans(brokerName)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(plans) == 0 {
-		return nil, fmt.Errorf(fmt.Sprintf("no service plans available for broker: %s", brokerName))
-	}
-
-	planVersions := make(map[string]string)
-
-	for _, plan := range plans {
-		planVersions[plan.GUID] = plan.MaintenanceInfoVersion
-	}
-
-	return planVersions, nil
-}
-
-func discoverUpgradeableInstances(api CFClient, planGUIDs []string, log Logger) ([]ccapi.ServiceInstance, int, error) {
-	serviceInstances, err := api.GetServiceInstances(planGUIDs)
+func discoverUpgradeableInstances(api CFClient, servicePlans []ccapi.ServicePlan, log Logger) ([]ccapi.ServiceInstance, int, error) {
+	serviceInstances, err := api.GetServiceInstancesForServicePlans(servicePlans)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -157,12 +171,4 @@ func discoverUpgradeableInstances(api CFClient, planGUIDs []string, log Logger) 
 
 func isCreateFailed(operationType, operationState string) bool {
 	return operationType == "create" && operationState == "failed"
-}
-
-func keys(m map[string]string) []string {
-	result := make([]string, 0, len(m))
-	for k := range m {
-		result = append(result, k)
-	}
-	return result
 }
