@@ -128,6 +128,20 @@ var _ = Describe("Logger", func() {
 
 		Expect(result).To(MatchRegexp(timestampRegexp + `: upgraded 2 of 5\n`))
 	})
+
+	Describe("HasUpgradeSucceded", func() {
+		It("can signal upgrade failures", func() {
+			l.UpgradeFailed(upgradeableInstance(1), time.Minute, fmt.Errorf("boom"))
+			Expect(l.HasUpgradeSucceeded()).To(BeFalse())
+		})
+
+		It("can signal upgrade success", func() {
+			l.UpgradeSucceeded(upgradeableInstance(1), time.Minute)
+			l.SkippingInstance(indexedInstance(1, false))
+			Expect(l.HasUpgradeSucceeded()).To(BeTrue())
+		})
+
+	})
 })
 
 func createFailedInstance() ccapi.ServiceInstance {

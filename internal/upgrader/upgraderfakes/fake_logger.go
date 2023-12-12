@@ -18,6 +18,16 @@ type FakeLogger struct {
 	finalTotalsMutex       sync.RWMutex
 	finalTotalsArgsForCall []struct {
 	}
+	HasUpgradeSucceededStub        func() bool
+	hasUpgradeSucceededMutex       sync.RWMutex
+	hasUpgradeSucceededArgsForCall []struct {
+	}
+	hasUpgradeSucceededReturns struct {
+		result1 bool
+	}
+	hasUpgradeSucceededReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	InitialTotalsStub        func(int, int)
 	initialTotalsMutex       sync.RWMutex
 	initialTotalsArgsForCall []struct {
@@ -111,6 +121,59 @@ func (fake *FakeLogger) FinalTotalsCalls(stub func()) {
 	fake.finalTotalsMutex.Lock()
 	defer fake.finalTotalsMutex.Unlock()
 	fake.FinalTotalsStub = stub
+}
+
+func (fake *FakeLogger) HasUpgradeSucceeded() bool {
+	fake.hasUpgradeSucceededMutex.Lock()
+	ret, specificReturn := fake.hasUpgradeSucceededReturnsOnCall[len(fake.hasUpgradeSucceededArgsForCall)]
+	fake.hasUpgradeSucceededArgsForCall = append(fake.hasUpgradeSucceededArgsForCall, struct {
+	}{})
+	stub := fake.HasUpgradeSucceededStub
+	fakeReturns := fake.hasUpgradeSucceededReturns
+	fake.recordInvocation("HasUpgradeSucceeded", []interface{}{})
+	fake.hasUpgradeSucceededMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeLogger) HasUpgradeSucceededCallCount() int {
+	fake.hasUpgradeSucceededMutex.RLock()
+	defer fake.hasUpgradeSucceededMutex.RUnlock()
+	return len(fake.hasUpgradeSucceededArgsForCall)
+}
+
+func (fake *FakeLogger) HasUpgradeSucceededCalls(stub func() bool) {
+	fake.hasUpgradeSucceededMutex.Lock()
+	defer fake.hasUpgradeSucceededMutex.Unlock()
+	fake.HasUpgradeSucceededStub = stub
+}
+
+func (fake *FakeLogger) HasUpgradeSucceededReturns(result1 bool) {
+	fake.hasUpgradeSucceededMutex.Lock()
+	defer fake.hasUpgradeSucceededMutex.Unlock()
+	fake.HasUpgradeSucceededStub = nil
+	fake.hasUpgradeSucceededReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeLogger) HasUpgradeSucceededReturnsOnCall(i int, result1 bool) {
+	fake.hasUpgradeSucceededMutex.Lock()
+	defer fake.hasUpgradeSucceededMutex.Unlock()
+	fake.HasUpgradeSucceededStub = nil
+	if fake.hasUpgradeSucceededReturnsOnCall == nil {
+		fake.hasUpgradeSucceededReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.hasUpgradeSucceededReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
 }
 
 func (fake *FakeLogger) InitialTotals(arg1 int, arg2 int) {
@@ -317,6 +380,8 @@ func (fake *FakeLogger) Invocations() map[string][][]interface{} {
 	defer fake.deactivatedPlanMutex.RUnlock()
 	fake.finalTotalsMutex.RLock()
 	defer fake.finalTotalsMutex.RUnlock()
+	fake.hasUpgradeSucceededMutex.RLock()
+	defer fake.hasUpgradeSucceededMutex.RUnlock()
 	fake.initialTotalsMutex.RLock()
 	defer fake.initialTotalsMutex.RUnlock()
 	fake.printfMutex.RLock()

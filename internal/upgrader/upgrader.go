@@ -26,6 +26,7 @@ type Logger interface {
 	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
 	DeactivatedPlan(instance ccapi.ServiceInstance)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
+	HasUpgradeSucceeded() bool
 	FinalTotals()
 }
 
@@ -128,6 +129,9 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	})
 
 	log.FinalTotals()
+	if !log.HasUpgradeSucceeded() {
+		return errors.New("there were failures upgrading one or more instances. Review the logs for more information")
+	}
 	return nil
 }
 
