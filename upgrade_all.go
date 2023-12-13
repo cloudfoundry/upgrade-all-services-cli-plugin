@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/logger"
@@ -29,10 +30,13 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 	}
 
 	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), logr, upgrader.UpgradeConfig{
-		BrokerName:            cfg.BrokerName,
-		ParallelUpgrades:      cfg.ParallelUpgrades,
-		DryRun:                cfg.DryRun,
-		CheckUpToDate:         cfg.CheckUpToDate,
+		BrokerName:       cfg.BrokerName,
+		ParallelUpgrades: cfg.ParallelUpgrades,
+		DryRun:           cfg.DryRun,
+		CheckUpToDate: upgrader.CheckUpToDate{
+			IsSet: cfg.CheckUpToDate.IsSet,
+			Value: cfg.CheckUpToDate.String(),
+		},
 		CheckDeactivatedPlans: cfg.CheckDeactivatedPlans,
 	})
 }

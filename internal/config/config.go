@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+
+	"github.com/onsi/ginkgo/v2/dsl/core"
 )
 
 // Config is the type that contains all the configuration data required to run the plugin
@@ -14,9 +16,24 @@ type Config struct {
 	SkipSSLValidation     bool
 	HTTPLogging           bool
 	DryRun                bool
-	CheckUpToDate         bool
+	CheckUpToDate         stringFlag
 	CheckDeactivatedPlans bool
 	ParallelUpgrades      int
+}
+
+type stringFlag struct {
+	IsSet bool
+	value string
+}
+
+func (sf *stringFlag) Set(x string) error {
+	sf.value = x
+	sf.IsSet = true
+	return nil
+}
+
+func (sf *stringFlag) String() string {
+	return sf.value
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -27,7 +44,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
-	flagSet.BoolVar(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
+	flagSet.Var(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDescription)
 	flagSet.BoolVar(&cfg.CheckDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
@@ -63,6 +80,14 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 			return Config{}, err
 		}
 	}
+
+	core.GinkgoWriter.Println("************************************************")
+	core.GinkgoWriter.Println("************************************************")
+	core.GinkgoWriter.Println("************************************************")
+	core.GinkgoWriter.Printf("my flag %+v", cfg.CheckUpToDate)
+	core.GinkgoWriter.Println("************************************************")
+	core.GinkgoWriter.Println("************************************************")
+	core.GinkgoWriter.Println("************************************************")
 	return cfg, nil
 }
 

@@ -17,9 +17,8 @@ const (
 	dryRunFlag        = "dry-run"
 	dryRunDescription = "print the service instances that would be upgraded"
 
-	checkUpToDateDefault     = false
 	checkUpToDateFlag        = "check-up-to-date"
-	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date - implies a dry-run"
+	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date [version] - version could be empty which implies the last version and a dry-run"
 
 	checkDeactivatedPlansDefault     = false
 	checkDeactivatedPlansFlag        = "check-deactivated-plans"

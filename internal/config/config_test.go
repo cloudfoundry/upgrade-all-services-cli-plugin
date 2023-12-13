@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"fmt"
+
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
@@ -305,6 +306,37 @@ var _ = Describe("Config", func() {
 			It("is true", func() {
 				Expect(cfgErr).NotTo(HaveOccurred())
 				Expect(cfg.DryRun).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("check-up-to-date", func() {
+		When("not specified", func() {
+			It("is not set", func() {
+				Expect(cfg.CheckUpToDate.IsSet).To(BeFalse())
+				Expect(cfg.CheckUpToDate.String()).To(BeEmpty())
+			})
+		})
+
+		When("specified without version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-check-up-to-date=")
+			})
+
+			It("is set", func() {
+				Expect(cfg.CheckUpToDate.IsSet).To(BeTrue())
+				Expect(cfg.CheckUpToDate.String()).To(BeEmpty())
+			})
+		})
+
+		When("specified with version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-check-up-to-date", "1.3.0")
+			})
+
+			It("is set and the value is the version", func() {
+				Expect(cfg.CheckUpToDate.IsSet).To(BeTrue())
+				Expect(cfg.CheckUpToDate.String()).To(Equal("1.3.0"))
 			})
 		})
 	})

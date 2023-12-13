@@ -33,8 +33,13 @@ type UpgradeConfig struct {
 	BrokerName            string
 	ParallelUpgrades      int
 	DryRun                bool
-	CheckUpToDate         bool
+	CheckUpToDate         CheckUpToDate
 	CheckDeactivatedPlans bool
+}
+
+type CheckUpToDate struct {
+	IsSet bool
+	Value string
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
@@ -66,19 +71,23 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
-	case cfg.CheckUpToDate:
-		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		var errs []error
+	case cfg.CheckUpToDate.IsSet:
+		if cfg.CheckUpToDate.Value == "" {
+			log.InitialTotals(totalServiceInstances, len(upgradableInstances))
+			var errs []error
 
-		if err := performCheckUpToDate(upgradableInstances, log); err != nil {
-			errs = append(errs, err)
+			if err := performCheckUpToDate(upgradableInstances, log); err != nil {
+				errs = append(errs, err)
+			}
+
+			if err := checkDeactivatedPlans(log, serviceInstances); err != nil {
+				errs = append(errs, err)
+			}
+
+			return errors.Join(errs...)
 		}
-
-		if err := checkDeactivatedPlans(log, serviceInstances); err != nil {
-			errs = append(errs, err)
-		}
-
-		return errors.Join(errs...)
+		// set with a value != ""
+		return nil
 	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		performDryRun(upgradableInstances, log)

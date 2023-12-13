@@ -188,7 +188,7 @@ var _ = Describe("Upgrade", func() {
 				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
 					BrokerName:       fakeBrokerName,
 					ParallelUpgrades: 5,
-					CheckUpToDate:    true,
+					CheckUpToDate:    upgrader.CheckUpToDate{IsSet: true, Value: ""},
 				})
 				Expect(err).To(MatchError("check up-to-date failed: found 3 instances which are not up-to-date"))
 			})
@@ -216,7 +216,7 @@ var _ = Describe("Upgrade", func() {
 				BrokerName:       fakeBrokerName,
 				ParallelUpgrades: 1,
 				DryRun:           true,
-				CheckUpToDate:    true,
+				CheckUpToDate:    upgrader.CheckUpToDate{IsSet: true, Value: ""},
 			})
 			Expect(err).To(MatchError("check up-to-date failed: found 3 instances which are not up-to-date"))
 		})
@@ -272,7 +272,7 @@ var _ = Describe("Upgrade", func() {
 					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
 						BrokerName:       fakeBrokerName,
 						ParallelUpgrades: 1,
-						CheckUpToDate:    true,
+						CheckUpToDate:    upgrader.CheckUpToDate{IsSet: true, Value: ""},
 					})
 					Expect(err).To(MatchError(ContainSubstring("check up-to-date failed: found 1 instances which are not up-to-date")))
 					Expect(err).To(MatchError(ContainSubstring("discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services")))
