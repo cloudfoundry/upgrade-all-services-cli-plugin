@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-
-	"github.com/onsi/ginkgo/v2/dsl/core"
 )
 
 // Config is the type that contains all the configuration data required to run the plugin
@@ -81,13 +79,6 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 		}
 	}
 
-	core.GinkgoWriter.Println("************************************************")
-	core.GinkgoWriter.Println("************************************************")
-	core.GinkgoWriter.Println("************************************************")
-	core.GinkgoWriter.Printf("my flag %+v", cfg.CheckUpToDate)
-	core.GinkgoWriter.Println("************************************************")
-	core.GinkgoWriter.Println("************************************************")
-	core.GinkgoWriter.Println("************************************************")
 	return cfg, nil
 }
 
