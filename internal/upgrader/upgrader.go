@@ -68,10 +68,21 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		return nil
 	case cfg.CheckUpToDate:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performCheckUpToDate(upgradableInstances, log)
+		var errs []error
+
+		if err := performCheckUpToDate(upgradableInstances, log); err != nil {
+			errs = append(errs, err)
+		}
+
+		if err := checkDeactivatedPlans(log, serviceInstances); err != nil {
+			errs = append(errs, err)
+		}
+
+		return errors.Join(errs...)
 	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performDryRun(upgradableInstances, log)
+		performDryRun(upgradableInstances, log)
+		return nil
 	default:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 		return performUpgrade(api, upgradableInstances, cfg.ParallelUpgrades, log)
@@ -135,23 +146,19 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 }
 
 func performCheckUpToDate(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
-	err := performDryRun(upgradableInstances, log)
-	if err != nil {
-		return fmt.Errorf("check up-to-date failed because dry-run returned the following error: %w", err)
-	}
+	performDryRun(upgradableInstances, log)
 	if len(upgradableInstances) > 0 {
 		return fmt.Errorf("check up-to-date failed: found %d instances which are not up-to-date", len(upgradableInstances))
 	}
 	return nil
 }
 
-func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
+func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) {
 	log.Printf("the following service instances would be upgraded:")
 	for _, i := range upgradableInstances {
 		log.UpgradeFailed(i, time.Duration(0), fmt.Errorf("dry-run prevented upgrade"))
 	}
 	log.FinalTotals()
-	return nil
 }
 
 func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.ServiceInstance) []ccapi.ServiceInstance {
