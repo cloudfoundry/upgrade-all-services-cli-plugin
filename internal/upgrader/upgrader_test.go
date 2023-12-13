@@ -221,8 +221,8 @@ var _ = Describe("Upgrade", func() {
 			Expect(err).To(MatchError("check up-to-date failed: found 3 instances which are not up-to-date"))
 		})
 
-		When("no version is passed and there are deactivated plans", func() {
-			Context("because we force the deactivated plans check in the check up-to-date operation", func() {
+		When("there are deactivated plans", func() {
+			Context("because we force the deactivated plans check in the check up-to-date operation if no version is passed", func() {
 				It("returns error stating there are deactivated plans", func() {
 					fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{
 						{
