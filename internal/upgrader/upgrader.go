@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo/v2/dsl/core"
-
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/workers"
 )
@@ -74,13 +72,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		log.Printf("no instances available to upgrade")
 		return nil
 	case cfg.CheckUpToDate.IsSet:
-
-		core.GinkgoWriter.Println("***************************************************")
-		core.GinkgoWriter.Println("***************************************************")
-		core.GinkgoWriter.Printf("check up to date flag %+v", cfg.CheckUpToDate)
-		core.GinkgoWriter.Println("***************************************************")
-		core.GinkgoWriter.Println("***************************************************")
-		core.GinkgoWriter.Println("***************************************************")
 
 		if cfg.CheckUpToDate.Value == "" {
 			log.InitialTotals(totalServiceInstances, len(upgradableInstances))
