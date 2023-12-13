@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/onsi/ginkgo/v2/dsl/core"
+
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/workers"
 )
@@ -72,6 +74,14 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		log.Printf("no instances available to upgrade")
 		return nil
 	case cfg.CheckUpToDate.IsSet:
+
+		core.GinkgoWriter.Println("***************************************************")
+		core.GinkgoWriter.Println("***************************************************")
+		core.GinkgoWriter.Printf("check up to date flag %+v", cfg.CheckUpToDate)
+		core.GinkgoWriter.Println("***************************************************")
+		core.GinkgoWriter.Println("***************************************************")
+		core.GinkgoWriter.Println("***************************************************")
+
 		if cfg.CheckUpToDate.Value == "" {
 			log.InitialTotals(totalServiceInstances, len(upgradableInstances))
 			var errs []error
@@ -86,7 +96,28 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 
 			return errors.Join(errs...)
 		}
+
 		// set with a value != ""
+		version := cfg.CheckUpToDate.Value
+		differentVersionFound := false
+		var ii []ccapi.ServiceInstance
+		for _, instance := range serviceInstances {
+			if instance.MaintenanceInfoVersion != version {
+				differentVersionFound = true
+				ii = append(ii, instance)
+			}
+		}
+
+		log.InitialTotals(len(serviceInstances), len(ii))
+		for _, instance := range ii {
+			dryRunErr := fmt.Errorf("dry-run prevented upgrade instance guid %s", instance.GUID)
+			log.UpgradeFailed(instance, time.Duration(0), dryRunErr)
+		}
+		log.FinalTotals()
+
+		if differentVersionFound {
+			return fmt.Errorf("check up-to-date failed: found %d instances which are not up-to-date", len(ii))
+		}
 		return nil
 	case cfg.DryRun:
 		log.InitialTotals(totalServiceInstances, len(upgradableInstances))

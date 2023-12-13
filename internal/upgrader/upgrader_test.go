@@ -25,7 +25,7 @@ var _ = Describe("Upgrade", func() {
 	var (
 		fakeCFClient                  *upgraderfakes.FakeCFClient
 		fakePlan                      ccapi.ServicePlan
-		fakeInstance1                 ccapi.ServiceInstance
+		notUpToDateInstance1          ccapi.ServiceInstance
 		fakeInstance2                 ccapi.ServiceInstance
 		fakeInstanceNoUpgrade         ccapi.ServiceInstance
 		fakeInstanceCreateFailed      ccapi.ServiceInstance
@@ -40,7 +40,7 @@ var _ = Describe("Upgrade", func() {
 			GUID:                   fakePlanGUID,
 			MaintenanceInfoVersion: "test-maintenance-info",
 		}
-		fakeInstance1 = ccapi.ServiceInstance{
+		notUpToDateInstance1 = ccapi.ServiceInstance{
 			Name:             "fake-instance-name-1",
 			GUID:             "fake-instance-guid-1",
 			ServicePlanGUID:  fakePlanGUID,
@@ -74,7 +74,7 @@ var _ = Describe("Upgrade", func() {
 		fakeInstanceCreateFailed.LastOperationState = "failed"
 		fakeInstanceDestroyFailed.LastOperationType = "destroy"
 		fakeInstanceDestroyFailed.LastOperationState = "failed"
-		fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstanceNoUpgrade, fakeInstanceCreateFailed, fakeInstanceDestroyFailed}
+		fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2, fakeInstanceNoUpgrade, fakeInstanceCreateFailed, fakeInstanceDestroyFailed}
 		fakeServiceInstancesNoUpgrade = []ccapi.ServiceInstance{fakeInstanceNoUpgrade, fakeInstanceCreateFailed}
 		fakeCFClient = &upgraderfakes.FakeCFClient{}
 		fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{fakePlan}, nil)
@@ -175,7 +175,7 @@ var _ = Describe("Upgrade", func() {
 			By("printing the GUIDs")
 			Expect(result).To(ContainSubstring(fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName)))
 			Expect(result).To(ContainSubstring("the following service instances would be upgraded:"))
-			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance1.GUID)))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, notUpToDateInstance1.GUID)))
 			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance2.GUID)))
 		})
 	})
@@ -207,7 +207,7 @@ var _ = Describe("Upgrade", func() {
 			By("printing the GUIDs")
 			Expect(result).To(ContainSubstring(fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName)))
 			Expect(result).To(ContainSubstring("the following service instances would be upgraded:"))
-			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance1.GUID)))
+			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, notUpToDateInstance1.GUID)))
 			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance2.GUID)))
 		})
 
@@ -243,7 +243,7 @@ var _ = Describe("Upgrade", func() {
 						},
 					}, nil)
 
-					fakeInstance1 = ccapi.ServiceInstance{
+					notUpToDateInstance1 = ccapi.ServiceInstance{
 						GUID:                              "fake-instance-guid-1",
 						Name:                              "fake-instance-name-1",
 						UpgradeAvailable:                  true,
@@ -266,7 +266,7 @@ var _ = Describe("Upgrade", func() {
 						ServicePlanMaintenanceInfoVersion: "1.5.7",
 						ServicePlanDeactivated:            false,
 					}
-					fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2}
+					fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2}
 					fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 
 					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
@@ -277,6 +277,64 @@ var _ = Describe("Upgrade", func() {
 					Expect(err).To(MatchError(ContainSubstring("check up-to-date failed: found 1 instances which are not up-to-date")))
 					Expect(err).To(MatchError(ContainSubstring("discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services")))
 				})
+			})
+		})
+
+		When("version is passed", func() {
+			It("returns error stating there are instances which are not up-to-date", func() {
+				fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{
+					{
+						GUID:                   "fake-deactivated-plan-1-guid",
+						Available:              true,
+						Name:                   "fake-deactivated-plan-1-name",
+						MaintenanceInfoVersion: "1.5.7",
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-1-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-1-name",
+					},
+					{
+						GUID:                   "fake-deactivated-plan-2-guid",
+						Available:              true,
+						Name:                   "fake-deactivated-plan-2-name",
+						MaintenanceInfoVersion: "1.5.7",
+						ServiceOfferingGUID:    "fake-service-offering-for-plan-2-guid",
+						ServiceOfferingName:    "fake-service-offering-for-plan-2-name",
+					},
+				}, nil)
+
+				notUpToDateInstance1 := ccapi.ServiceInstance{
+					GUID:                   "fake-instance-guid-1",
+					Name:                   "fake-instance-name-1",
+					UpgradeAvailable:       true,
+					ServicePlanGUID:        "fake-deactivated-plan-1-guid",
+					MaintenanceInfoVersion: "1.4.0",
+				}
+
+				fakeInstance2 := ccapi.ServiceInstance{
+					GUID:                   "fake-instance-guid-2",
+					Name:                   "fake-instance-name-2",
+					UpgradeAvailable:       false,
+					ServicePlanGUID:        "fake-deactivated-plan-2-guid",
+					MaintenanceInfoVersion: "1.5.7",
+				}
+
+				notUpToDateInstance2 := ccapi.ServiceInstance{
+					GUID:                   "fake-instance-guid-3",
+					Name:                   "fake-instance-name-3",
+					UpgradeAvailable:       false,
+					ServicePlanGUID:        "fake-deactivated-plan-2-guid",
+					MaintenanceInfoVersion: "1.4.4",
+				}
+				fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2, notUpToDateInstance2}
+				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
+
+				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 1,
+					CheckUpToDate:    upgrader.CheckUpToDate{IsSet: true, Value: "1.5.7"},
+				})
+
+				Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(2))
+				Expect(err).To(MatchError("check up-to-date failed: found 2 instances which are not up-to-date"))
 			})
 		})
 
@@ -340,7 +398,7 @@ var _ = Describe("Upgrade", func() {
 					},
 				}, nil)
 
-				fakeInstance1 = ccapi.ServiceInstance{
+				notUpToDateInstance1 = ccapi.ServiceInstance{
 					GUID:                              "fake-instance-guid-1",
 					Name:                              "fake-instance-name-1",
 					UpgradeAvailable:                  true,
@@ -362,7 +420,7 @@ var _ = Describe("Upgrade", func() {
 					ServicePlanMaintenanceInfoVersion: "1.5.7",
 					ServicePlanDeactivated:            false,
 				}
-				fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2}
+				fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2}
 				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 			})
 
@@ -381,7 +439,7 @@ var _ = Describe("Upgrade", func() {
 				)
 
 				Expect(fakeLog.DeactivatedPlanCallCount()).To(Equal(1))
-				Expect(fakeLog.DeactivatedPlanArgsForCall(0)).To(Equal(fakeInstance1))
+				Expect(fakeLog.DeactivatedPlanArgsForCall(0)).To(Equal(notUpToDateInstance1))
 			})
 		})
 
@@ -407,7 +465,7 @@ var _ = Describe("Upgrade", func() {
 					},
 				}, nil)
 
-				fakeInstance1 = ccapi.ServiceInstance{
+				notUpToDateInstance1 = ccapi.ServiceInstance{
 					GUID:                              "fake-instance-guid-1",
 					Name:                              "fake-instance-name-1",
 					UpgradeAvailable:                  false,
@@ -429,7 +487,7 @@ var _ = Describe("Upgrade", func() {
 					ServicePlanMaintenanceInfoVersion: "1.5.7",
 					ServicePlanDeactivated:            false,
 				}
-				fakeServiceInstances = []ccapi.ServiceInstance{fakeInstance1, fakeInstance2}
+				fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2}
 				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 			})
 
