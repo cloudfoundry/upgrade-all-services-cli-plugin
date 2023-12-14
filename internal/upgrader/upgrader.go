@@ -49,16 +49,19 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	}
 
 	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
-	upgradableInstances, totalServiceInstances, err := discoverUpgradeableInstances(api, servicePlans, log)
+	serviceInstances, err := api.GetServiceInstancesForServicePlans(servicePlans)
 	if err != nil {
 		return err
 	}
 
 	if cfg.CheckDeactivatedPlans {
-		if err := checkDeactivatedPlans(log, upgradableInstances); err != nil {
+		if err := checkDeactivatedPlans(log, serviceInstances); err != nil {
 			return err
 		}
 	}
+
+	totalServiceInstances := len(serviceInstances)
+	upgradableInstances := discoverInstancesWithPendingUpgrade(log, serviceInstances)
 
 	switch {
 	case len(upgradableInstances) == 0:
@@ -76,9 +79,9 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	}
 }
 
-func checkDeactivatedPlans(log Logger, upgradableInstances []ccapi.ServiceInstance) error {
+func checkDeactivatedPlans(log Logger, instances []ccapi.ServiceInstance) error {
 	var deactivatedPlanFound bool
-	for _, instance := range upgradableInstances {
+	for _, instance := range instances {
 		if instance.ServicePlanDeactivated {
 			deactivatedPlanFound = true
 			log.DeactivatedPlan(instance)
@@ -87,7 +90,7 @@ func checkDeactivatedPlans(log Logger, upgradableInstances []ccapi.ServiceInstan
 
 	if deactivatedPlanFound {
 		return errors.New(
-			"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
+			"discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services",
 		)
 	}
 	return nil
@@ -155,24 +158,20 @@ func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) erro
 	return nil
 }
 
-func discoverUpgradeableInstances(api CFClient, servicePlans []ccapi.ServicePlan, log Logger) ([]ccapi.ServiceInstance, int, error) {
-	serviceInstances, err := api.GetServiceInstancesForServicePlans(servicePlans)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	var upgradableInstances []ccapi.ServiceInstance
+func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.ServiceInstance) []ccapi.ServiceInstance {
+	var instancesWithPendingUpgrade []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
-		if i.UpgradeAvailable && isCreateFailed(i.LastOperationType, i.LastOperationState) {
-			log.SkippingInstance(i)
-		} else if i.UpgradeAvailable {
-			upgradableInstances = append(upgradableInstances, i)
+		if !i.UpgradeAvailable {
+			continue
 		}
+
+		if ccapi.HasInstanceCreateFailedStatus(i) {
+			log.SkippingInstance(i)
+			continue
+		}
+
+		instancesWithPendingUpgrade = append(instancesWithPendingUpgrade, i)
 	}
 
-	return upgradableInstances, len(serviceInstances), nil
-}
-
-func isCreateFailed(operationType, operationState string) bool {
-	return operationType == "create" && operationState == "failed"
+	return instancesWithPendingUpgrade
 }

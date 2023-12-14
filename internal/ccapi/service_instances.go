@@ -78,6 +78,10 @@ func (c CCAPI) GetServiceInstancesForServicePlans(plans []ServicePlan) ([]Servic
 	return receiver.Instances, nil
 }
 
+func HasInstanceCreateFailedStatus(i ServiceInstance) bool {
+	return i.LastOperationType == "create" && i.LastOperationState == "failed"
+}
+
 func computePlanGUIDLookup(plans []ServicePlan) func(guid string) ServicePlan {
 	plansLookup := make(map[string]ServicePlan, len(plans))
 	for _, plan := range plans {

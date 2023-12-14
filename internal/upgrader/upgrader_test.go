@@ -318,7 +318,7 @@ var _ = Describe("Upgrade", func() {
 
 				Expect(err).To(
 					MatchError(
-						"discovered deactivated plans associated with upgradable instances. Review the log to collect information and restore the deactivated plans or create user provided services",
+						"discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services",
 					),
 				)
 
