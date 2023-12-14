@@ -124,6 +124,12 @@ func (l *Logger) FinalTotals() {
 	logRowFormatTotals(l)
 }
 
+func (l *Logger) HasUpgradeSucceeded() bool {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	return len(l.failures) == 0
+}
+
 func logRowFormatTotals(l *Logger) {
 	if len(l.failures) > 0 {
 		l.printf("failed to upgrade %d instances", len(l.failures))
