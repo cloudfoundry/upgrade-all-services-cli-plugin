@@ -155,7 +155,7 @@ func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) erro
 }
 
 func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.ServiceInstance) []ccapi.ServiceInstance {
-	var ii []ccapi.ServiceInstance
+	var instancesWithPendingUpgrade []ccapi.ServiceInstance
 	for _, i := range serviceInstances {
 		if !i.UpgradeAvailable {
 			continue
@@ -166,8 +166,8 @@ func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.Se
 			continue
 		}
 
-		ii = append(ii, i)
+		instancesWithPendingUpgrade = append(instancesWithPendingUpgrade, i)
 	}
 
-	return ii
+	return instancesWithPendingUpgrade
 }
