@@ -81,6 +81,7 @@ var _ = Describe("Upgrade", func() {
 		fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 
 		fakeLog = &upgraderfakes.FakeLogger{}
+		fakeLog.HasUpgradeSucceededReturns(true)
 	})
 
 	It("upgrades a service instance", func() {
@@ -580,6 +581,7 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.UpgradeServiceInstanceReturnsOnCall(0, nil)
 			fakeCFClient.UpgradeServiceInstanceReturnsOnCall(1, fmt.Errorf("failed to upgrade instance"))
 			fakeCFClient.UpgradeServiceInstanceReturnsOnCall(2, nil)
+			fakeLog.HasUpgradeSucceededReturns(false)
 		})
 
 		It("should pass the correct information to the logger", func() {
@@ -587,7 +589,7 @@ var _ = Describe("Upgrade", func() {
 				BrokerName:       fakeBrokerName,
 				ParallelUpgrades: 1,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 
 			Expect(fakeLog.InitialTotalsCallCount()).To(Equal(1))
 			actualTotal, actualUpgradable := fakeLog.InitialTotalsArgsForCall(0)
@@ -608,6 +610,20 @@ var _ = Describe("Upgrade", func() {
 			Expect(fakeLog.UpgradeSucceededCallCount()).To(Equal(2))
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(1))
 			Expect(fakeLog.FinalTotalsCallCount()).To(Equal(1))
+		})
+
+		It("should return an error", func() {
+			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+				BrokerName:            fakeBrokerName,
+				ParallelUpgrades:      1,
+				DryRun:                false,
+				CheckUpToDate:         false,
+				CheckDeactivatedPlans: false,
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("there were failures upgrading one or more instances. Review the logs for more information"))
+
 		})
 	})
 })
