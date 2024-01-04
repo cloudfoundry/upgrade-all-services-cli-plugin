@@ -51,7 +51,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 				return nil
 			}
 
-			v, err := validateCheckUpToDateVersion(cfg.MinVersionRequired)
+			v, err := validateMinVersionRequired(cfg.MinVersionRequired)
 			if err != nil {
 				return err
 			}

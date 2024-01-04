@@ -69,7 +69,7 @@ func validateBrokerName(name string) error {
 	return nil
 }
 
-func validateCheckUpToDateVersion(ver string) (*version.Version, error) {
+func validateMinVersionRequired(ver string) (*version.Version, error) {
 	v, err := version.NewVersion(ver)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing check-up-to-date option: %w", err)
