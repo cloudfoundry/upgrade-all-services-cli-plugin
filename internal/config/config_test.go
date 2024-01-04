@@ -310,7 +310,7 @@ var _ = Describe("Config", func() {
 		})
 	})
 
-	Describe("check-up-to-date", func() {
+	Describe("min-version-required", func() {
 		When("not specified", func() {
 			It("is not set", func() {
 				Expect(cfg.MinVersionRequired).To(BeEmpty())
