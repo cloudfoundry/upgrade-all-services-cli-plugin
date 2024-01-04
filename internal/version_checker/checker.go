@@ -7,7 +7,7 @@ import (
 )
 
 type checker struct {
-	minimumRequiredVersion *version.Version
+	minimumVersionRequired *version.Version
 }
 
 func New(minimumRequiredVersion string) (*checker, error) {
@@ -16,7 +16,7 @@ func New(minimumRequiredVersion string) (*checker, error) {
 		return nil, fmt.Errorf("incorrect minimum required version: %w", err)
 	}
 
-	return &checker{minimumRequiredVersion: ver}, nil
+	return &checker{minimumVersionRequired: ver}, nil
 }
 
 func (c *checker) IsInstanceVersionLessThanMinimumRequired(instanceVersion string) (bool, error) {
@@ -25,5 +25,5 @@ func (c *checker) IsInstanceVersionLessThanMinimumRequired(instanceVersion strin
 		return false, fmt.Errorf("incorrect instance version: %w", err)
 	}
 
-	return iv.LessThan(c.minimumRequiredVersion), nil
+	return iv.LessThan(c.minimumVersionRequired), nil
 }
