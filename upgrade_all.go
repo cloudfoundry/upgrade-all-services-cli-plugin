@@ -30,13 +30,11 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 	}
 
 	return upgrader.Upgrade(ccapi.NewCCAPI(reqr), logr, upgrader.UpgradeConfig{
-		BrokerName:       cfg.BrokerName,
-		ParallelUpgrades: cfg.ParallelUpgrades,
-		DryRun:           cfg.DryRun,
-		CheckUpToDate: upgrader.CheckUpToDate{
-			IsSet: cfg.CheckUpToDate.IsSet,
-			Value: cfg.CheckUpToDate.String(),
-		},
+		BrokerName:            cfg.BrokerName,
+		ParallelUpgrades:      cfg.ParallelUpgrades,
+		DryRun:                cfg.DryRun,
+		MinVersionRequired:    cfg.MinVersionRequired,
+		FailIfNotUpToDate:     cfg.FailIfNotUpToDate,
 		CheckDeactivatedPlans: cfg.CheckDeactivatedPlans,
 	})
 }

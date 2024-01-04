@@ -313,30 +313,75 @@ var _ = Describe("Config", func() {
 	Describe("check-up-to-date", func() {
 		When("not specified", func() {
 			It("is not set", func() {
-				Expect(cfg.CheckUpToDate.IsSet).To(BeFalse())
-				Expect(cfg.CheckUpToDate.String()).To(BeEmpty())
+				Expect(cfg.MinVersionRequired).To(BeEmpty())
 			})
 		})
 
 		When("specified without version", func() {
 			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-check-up-to-date=")
+				fakeArgs = append(fakeArgs, "-min-version-required=")
 			})
 
-			It("is set", func() {
-				Expect(cfg.CheckUpToDate.IsSet).To(BeTrue())
-				Expect(cfg.CheckUpToDate.String()).To(BeEmpty())
+			It("an empty value is set", func() {
+				Expect(cfg.MinVersionRequired).To(BeEmpty())
+			})
+		})
+
+		When("specified with a non-semver version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-min-version-required", "invalid version")
+			})
+
+			It("is set and the value is the version", func() {
+				Expect(cfgErr).To(MatchError(ContainSubstring("error parsing check-up-to-date option: Malformed version: invalid version")))
 			})
 		})
 
 		When("specified with version", func() {
 			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-check-up-to-date", "1.3.0")
+				fakeArgs = append(fakeArgs, "-min-version-required", "1.3.0")
 			})
 
 			It("is set and the value is the version", func() {
-				Expect(cfg.CheckUpToDate.IsSet).To(BeTrue())
-				Expect(cfg.CheckUpToDate.String()).To(Equal("1.3.0"))
+				Expect(cfg.MinVersionRequired).To(Equal("1.3.0"))
+			})
+		})
+	})
+
+	Describe("fail-if-not-up-to-date", func() {
+		When("not specified", func() {
+			It("is not set", func() {
+				Expect(cfg.FailIfNotUpToDate).To(BeFalse())
+			})
+		})
+
+		When("specified without value", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date")
+			})
+
+			It("is true", func() {
+				Expect(cfg.FailIfNotUpToDate).To(BeTrue())
+			})
+		})
+
+		When("specified with true value", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date=true")
+			})
+
+			It("is true", func() {
+				Expect(cfg.FailIfNotUpToDate).To(BeTrue())
+			})
+		})
+
+		When("specified with false value", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date=false")
+			})
+
+			It("is false", func() {
+				Expect(cfg.FailIfNotUpToDate).To(BeFalse())
 			})
 		})
 	})

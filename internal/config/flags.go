@@ -17,8 +17,13 @@ const (
 	dryRunFlag        = "dry-run"
 	dryRunDescription = "print the service instances that would be upgraded"
 
-	checkUpToDateFlag        = "check-up-to-date"
-	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date [version] - version could be empty which implies the last version and a dry-run"
+	failIfNotUpToDateDefault     = false
+	failIfNotUpToDateFlag        = "fail-if-not-up-to-date"
+	failIfNotUpToDateDescription = "Checks and fails if any service instance is not up-to-date. An instance is not up-to-date if it is marked as upgradable or belongs to a deactivated plan"
+
+	minVersionRequiredDefault     = ""
+	minVersionRequiredFlag        = "min-version-required"
+	minVersionRequiredDescription = "--min-version-required <major.minor.patch>. Checks and fails if any service instance has a version lower than the specified"
 
 	checkDeactivatedPlansDefault     = false
 	checkDeactivatedPlansFlag        = "check-deactivated-plans"

@@ -14,24 +14,10 @@ type Config struct {
 	SkipSSLValidation     bool
 	HTTPLogging           bool
 	DryRun                bool
-	CheckUpToDate         stringFlag
+	MinVersionRequired    string
+	FailIfNotUpToDate     bool
 	CheckDeactivatedPlans bool
 	ParallelUpgrades      int
-}
-
-type stringFlag struct {
-	IsSet bool
-	value string
-}
-
-func (sf *stringFlag) Set(x string) error {
-	sf.value = x
-	sf.IsSet = true
-	return nil
-}
-
-func (sf *stringFlag) String() string {
-	return sf.value
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -42,36 +28,36 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
-	flagSet.Var(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDescription)
+	flagSet.BoolVar(&cfg.FailIfNotUpToDate, failIfNotUpToDateFlag, failIfNotUpToDateDefault, failIfNotUpToDateDescription)
+	flagSet.StringVar(&cfg.MinVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
 	flagSet.BoolVar(&cfg.CheckDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
 	for _, s := range []func() error{
-		func() error {
-			return validateLoginStatus(conn)
-		},
-		func() error {
-			return validateAPIVersion(conn)
-		},
-		func() error {
-			return read("access token", conn.AccessToken, &cfg.APIToken)
-		},
-		func() error {
-			return read("API endpoint", conn.ApiEndpoint, &cfg.APIEndpoint)
-		},
-		func() error {
-			return read("skip SSL validation", conn.IsSSLDisabled, &cfg.SkipSSLValidation)
-		},
+		func() error { return validateLoginStatus(conn) },
+		func() error { return validateAPIVersion(conn) },
+		func() error { return read("access token", conn.AccessToken, &cfg.APIToken) },
+		func() error { return read("API endpoint", conn.ApiEndpoint, &cfg.APIEndpoint) },
+		func() error { return read("skip SSL validation", conn.IsSSLDisabled, &cfg.SkipSSLValidation) },
 		func() (err error) {
 			cfg.BrokerName, err = parseCommandLine(flagSet, args)
 			return
 		},
+		func() error { return validateParallelUpgrades(cfg.ParallelUpgrades) },
+		func() error { return validateBrokerName(cfg.BrokerName) },
 		func() error {
-			return validateParallelUpgrades(cfg.ParallelUpgrades)
-		},
-		func() error {
-			return validateBrokerName(cfg.BrokerName)
+			if cfg.MinVersionRequired == "" {
+				return nil
+			}
+
+			v, err := validateCheckUpToDateVersion(cfg.MinVersionRequired)
+			if err != nil {
+				return err
+			}
+
+			cfg.MinVersionRequired = v.String()
+			return nil
 		},
 	} {
 		if err := s(); err != nil {
