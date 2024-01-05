@@ -332,7 +332,7 @@ var _ = Describe("Config", func() {
 				fakeArgs = append(fakeArgs, "-min-version-required", "invalid version")
 			})
 
-			It("is set and the value is the version", func() {
+			It("returns an error", func() {
 				Expect(cfgErr).To(MatchError(ContainSubstring("error parsing min-version-required option: Malformed version: invalid version")))
 			})
 		})
