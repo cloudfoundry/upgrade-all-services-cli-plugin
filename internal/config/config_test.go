@@ -348,44 +348,6 @@ var _ = Describe("Config", func() {
 		})
 	})
 
-	Describe("fail-if-not-up-to-date", func() {
-		When("not specified", func() {
-			It("is not set", func() {
-				Expect(cfg.FailIfNotUpToDate).To(BeFalse())
-			})
-		})
-
-		When("specified without value", func() {
-			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date")
-			})
-
-			It("is true", func() {
-				Expect(cfg.FailIfNotUpToDate).To(BeTrue())
-			})
-		})
-
-		When("specified with true value", func() {
-			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date=true")
-			})
-
-			It("is true", func() {
-				Expect(cfg.FailIfNotUpToDate).To(BeTrue())
-			})
-		})
-
-		When("specified with false value", func() {
-			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-fail-if-not-up-to-date=false")
-			})
-
-			It("is false", func() {
-				Expect(cfg.FailIfNotUpToDate).To(BeFalse())
-			})
-		})
-	})
-
 	Describe("invalid combinations", func() {
 		When("-dry-run and -parallel are specified together", func() {
 			BeforeEach(func() {

@@ -15,7 +15,7 @@ type Config struct {
 	HTTPLogging           bool
 	DryRun                bool
 	MinVersionRequired    string
-	FailIfNotUpToDate     bool
+	CheckUpToDate         bool
 	CheckDeactivatedPlans bool
 	ParallelUpgrades      int
 }
@@ -28,7 +28,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
-	flagSet.BoolVar(&cfg.FailIfNotUpToDate, failIfNotUpToDateFlag, failIfNotUpToDateDefault, failIfNotUpToDateDescription)
+	flagSet.BoolVar(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkToDateDescription)
 	flagSet.StringVar(&cfg.MinVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
 	flagSet.BoolVar(&cfg.CheckDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 

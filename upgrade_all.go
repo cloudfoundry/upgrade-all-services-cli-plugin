@@ -34,7 +34,7 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		ParallelUpgrades:      cfg.ParallelUpgrades,
 		DryRun:                cfg.DryRun,
 		MinVersionRequired:    cfg.MinVersionRequired,
-		FailIfNotUpToDate:     cfg.FailIfNotUpToDate,
+		FailIfNotUpToDate:     cfg.CheckUpToDate,
 		CheckDeactivatedPlans: cfg.CheckDeactivatedPlans,
 	})
 }

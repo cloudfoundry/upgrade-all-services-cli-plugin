@@ -36,6 +36,6 @@ Options:
     -loghttp                                  - log HTTP requests and responses
     -dry-run                                  - print the service instances that would be upgraded
     -min-version-required <major.minor.patch> - checks and fails if any service instance has a version less than the minimum required <major.minor.patch>
-    -fail-if-not-up-to-date                   - checks and fails if any service instance is not up-to-date. An instance is not up-to-date if it is marked as upgradable or belongs to a deactivated plan
+    -check-up-to-date                         - checks and fails if any service instance is not up-to-date. An instance is not up-to-date if it is marked as upgradable or belongs to a deactivated plan
     -check-deactivated-plans                  - checks and fails if any of the plans have been deactivated
 ```
