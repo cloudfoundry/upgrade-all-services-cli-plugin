@@ -317,7 +317,7 @@ var _ = Describe("Upgrade", func() {
 				MinVersionRequired: "1.5.7",
 			})
 
-			Expect(err).To(MatchError("found 2 instances which are not up-to-date"))
+			Expect(err).To(MatchError("found 2 service instances with a version less than the minimum required"))
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(2))
 			_, _, dryrunErr := fakeLog.UpgradeFailedArgsForCall(0)
 			Expect(dryrunErr.Error()).To(Equal(fmt.Sprintf("dry-run prevented upgrade instance guid %s", fakeInstance1.GUID)))
@@ -376,6 +376,7 @@ var _ = Describe("Upgrade", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
+			Expect(fakeLog.PrintfArgsForCall(1)).To(Equal("no instances found with version less than required"))
 		})
 	})
 

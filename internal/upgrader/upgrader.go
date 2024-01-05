@@ -65,7 +65,10 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
 		defer log.FinalTotals()
 		var errs MultiError
-		errs.Append(performCheckUpToDate(upgradableInstances, log))
+		performDryRun(upgradableInstances, log)
+		if len(upgradableInstances) > 0 {
+			errs.Append(fmt.Errorf("found %d instances which are not up-to-date", len(upgradableInstances)))
+		}
 		errs.Append(checkDeactivatedPlans(log, serviceInstances))
 		if len(errs.Errors) > 0 {
 			return &errs
@@ -73,11 +76,20 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 
 		return nil
 	case cfg.MinVersionRequired != "":
-		instances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersionRequired)
+		filteredInstances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersionRequired)
 		if err != nil {
 			return err
 		}
-		return performCheckUpToDate(instances, log)
+
+		if len(filteredInstances) == 0 {
+			log.Printf("no instances found with version less than required")
+			return nil
+		}
+
+		log.InitialTotals(len(serviceInstances), len(filteredInstances))
+		defer log.FinalTotals()
+		performDryRun(filteredInstances, log)
+		return fmt.Errorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
@@ -167,14 +179,6 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 
 	if !log.HasUpgradeSucceeded() {
 		return errors.New("there were failures upgrading one or more instances. Review the logs for more information")
-	}
-	return nil
-}
-
-func performCheckUpToDate(serviceInstances []ccapi.ServiceInstance, log Logger) error {
-	performDryRun(serviceInstances, log)
-	if len(serviceInstances) > 0 {
-		return fmt.Errorf("found %d instances which are not up-to-date", len(serviceInstances))
 	}
 	return nil
 }
