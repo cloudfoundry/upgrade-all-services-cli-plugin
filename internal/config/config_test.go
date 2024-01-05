@@ -333,7 +333,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("is set and the value is the version", func() {
-				Expect(cfgErr).To(MatchError(ContainSubstring("error parsing check-up-to-date option: Malformed version: invalid version")))
+				Expect(cfgErr).To(MatchError(ContainSubstring("error parsing min-version-required option: Malformed version: invalid version")))
 			})
 		})
 

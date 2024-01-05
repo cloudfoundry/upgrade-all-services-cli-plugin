@@ -46,18 +46,9 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 		},
 		func() error { return validateParallelUpgrades(cfg.ParallelUpgrades) },
 		func() error { return validateBrokerName(cfg.BrokerName) },
-		func() error {
-			if cfg.MinVersionRequired == "" {
-				return nil
-			}
-
-			v, err := validateMinVersionRequired(cfg.MinVersionRequired)
-			if err != nil {
-				return err
-			}
-
-			cfg.MinVersionRequired = v.String()
-			return nil
+		func() (err error) {
+			cfg.MinVersionRequired, err = validateMinVersionRequired(cfg.MinVersionRequired)
+			return
 		},
 	} {
 		if err := s(); err != nil {
