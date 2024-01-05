@@ -36,7 +36,7 @@ type UpgradeConfig struct {
 	ParallelUpgrades      int
 	DryRun                bool
 	MinVersionRequired    string
-	FailIfNotUpToDate     bool
+	CheckUpToDate         bool
 	CheckDeactivatedPlans bool
 }
 
@@ -61,7 +61,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	switch {
 	case cfg.CheckDeactivatedPlans:
 		return checkDeactivatedPlans(log, serviceInstances)
-	case cfg.FailIfNotUpToDate:
+	case cfg.CheckUpToDate:
 		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
 		defer log.FinalTotals()
 		var errs MultiError

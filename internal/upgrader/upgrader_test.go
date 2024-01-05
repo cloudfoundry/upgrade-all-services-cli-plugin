@@ -180,15 +180,15 @@ var _ = Describe("Upgrade", func() {
 		})
 	})
 
-	When("running with --fail-if-not-up-to-date", func() {
+	When("running with --check-up-to-date", func() {
 		It("should print out service GUIDs and not attempt to upgrade", func() {
 			result := captureStdout(func() {
 				l := logger.New(100 * time.Millisecond)
 				defer l.Cleanup()
 				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
-					BrokerName:        fakeBrokerName,
-					ParallelUpgrades:  5,
-					FailIfNotUpToDate: true,
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 5,
+					CheckUpToDate:    true,
 				})
 				Expect(err).To(MatchError("found 3 instances which are not up-to-date"))
 			})
@@ -211,7 +211,7 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		When("there are deactivated plans", func() {
-			Context("because we force the deactivated plans check in the fail if not up-to-date operation", func() {
+			Context("because we force the deactivated plans check in the check-up-to-date operation", func() {
 				It("returns error stating there are deactivated plans", func() {
 					deactivatedPlan := ccapi.ServicePlan{
 						GUID:                   "fake-deactivated-plan-1-guid",
@@ -275,9 +275,9 @@ var _ = Describe("Upgrade", func() {
 					fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 
 					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-						BrokerName:        fakeBrokerName,
-						ParallelUpgrades:  1,
-						FailIfNotUpToDate: true,
+						BrokerName:       fakeBrokerName,
+						ParallelUpgrades: 1,
+						CheckUpToDate:    true,
 					})
 					Expect(err).To(MatchError(ContainSubstring("found 1 instances which are not up-to-date")))
 					Expect(err).To(MatchError(ContainSubstring("discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services")))
