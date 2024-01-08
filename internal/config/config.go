@@ -14,6 +14,7 @@ type Config struct {
 	SkipSSLValidation     bool
 	HTTPLogging           bool
 	DryRun                bool
+	MinVersionRequired    string
 	CheckUpToDate         bool
 	CheckDeactivatedPlans bool
 	ParallelUpgrades      int
@@ -28,41 +29,33 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
 	flagSet.BoolVar(&cfg.DryRun, dryRunFlag, dryRunDefault, dryRunDescription)
 	flagSet.BoolVar(&cfg.CheckUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
+	flagSet.StringVar(&cfg.MinVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
 	flagSet.BoolVar(&cfg.CheckDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
 	for _, s := range []func() error{
-		func() error {
-			return validateLoginStatus(conn)
-		},
-		func() error {
-			return validateAPIVersion(conn)
-		},
-		func() error {
-			return read("access token", conn.AccessToken, &cfg.APIToken)
-		},
-		func() error {
-			return read("API endpoint", conn.ApiEndpoint, &cfg.APIEndpoint)
-		},
-		func() error {
-			return read("skip SSL validation", conn.IsSSLDisabled, &cfg.SkipSSLValidation)
-		},
+		func() error { return validateLoginStatus(conn) },
+		func() error { return validateAPIVersion(conn) },
+		func() error { return read("access token", conn.AccessToken, &cfg.APIToken) },
+		func() error { return read("API endpoint", conn.ApiEndpoint, &cfg.APIEndpoint) },
+		func() error { return read("skip SSL validation", conn.IsSSLDisabled, &cfg.SkipSSLValidation) },
 		func() (err error) {
 			cfg.BrokerName, err = parseCommandLine(flagSet, args)
 			return
 		},
-		func() error {
-			return validateParallelUpgrades(cfg.ParallelUpgrades)
-		},
-		func() error {
-			return validateBrokerName(cfg.BrokerName)
+		func() error { return validateParallelUpgrades(cfg.ParallelUpgrades) },
+		func() error { return validateBrokerName(cfg.BrokerName) },
+		func() (err error) {
+			cfg.MinVersionRequired, err = validateMinVersionRequired(cfg.MinVersionRequired)
+			return
 		},
 	} {
 		if err := s(); err != nil {
 			return Config{}, err
 		}
 	}
+
 	return cfg, nil
 }
 

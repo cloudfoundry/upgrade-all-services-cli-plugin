@@ -68,3 +68,15 @@ func validateBrokerName(name string) error {
 
 	return nil
 }
+
+func validateMinVersionRequired(ver string) (string, error) {
+	if ver == "" {
+		return "", nil
+	}
+
+	v, err := version.NewVersion(ver)
+	if err != nil {
+		return "", fmt.Errorf("error parsing min-version-required option: %w", err)
+	}
+	return v.String(), nil
+}

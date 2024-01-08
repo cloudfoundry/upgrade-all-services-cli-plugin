@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
+	"upgrade-all-services-cli-plugin/internal/versionchecker"
 	"upgrade-all-services-cli-plugin/internal/workers"
 )
 
@@ -34,6 +35,7 @@ type UpgradeConfig struct {
 	BrokerName            string
 	ParallelUpgrades      int
 	DryRun                bool
+	MinVersionRequired    string
 	CheckUpToDate         bool
 	CheckDeactivatedPlans bool
 }
@@ -45,7 +47,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	}
 
 	if len(servicePlans) == 0 {
-		return fmt.Errorf(fmt.Sprintf("no service plans available for broker: %s", cfg.BrokerName))
+		return fmt.Errorf("no service plans available for broker: %s", cfg.BrokerName)
 	}
 
 	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
@@ -54,29 +56,73 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		return err
 	}
 
-	if cfg.CheckDeactivatedPlans {
-		if err := checkDeactivatedPlans(log, serviceInstances); err != nil {
-			return err
-		}
-	}
-
-	totalServiceInstances := len(serviceInstances)
 	upgradableInstances := discoverInstancesWithPendingUpgrade(log, serviceInstances)
 
 	switch {
+	case cfg.CheckDeactivatedPlans:
+		return checkDeactivatedPlans(log, serviceInstances)
+	case cfg.CheckUpToDate:
+		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
+		defer log.FinalTotals()
+		var errs MultiError
+		performDryRun(upgradableInstances, log)
+		if len(upgradableInstances) > 0 {
+			errs.Append(fmt.Errorf("found %d instances which are not up-to-date", len(upgradableInstances)))
+		}
+		errs.Append(checkDeactivatedPlans(log, serviceInstances))
+		if len(errs.Errors) > 0 {
+			return &errs
+		}
+
+		return nil
+	case cfg.MinVersionRequired != "":
+		filteredInstances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersionRequired)
+		if err != nil {
+			return err
+		}
+
+		if len(filteredInstances) == 0 {
+			log.Printf("no instances found with version less than required")
+			return nil
+		}
+
+		log.InitialTotals(len(serviceInstances), len(filteredInstances))
+		defer log.FinalTotals()
+		performDryRun(filteredInstances, log)
+		return fmt.Errorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
-	case cfg.CheckUpToDate:
-		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performCheckUpToDate(upgradableInstances, log)
 	case cfg.DryRun:
-		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
-		return performDryRun(upgradableInstances, log)
+		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
+		defer log.FinalTotals()
+		performDryRun(upgradableInstances, log)
+		return nil
 	default:
-		log.InitialTotals(totalServiceInstances, len(upgradableInstances))
+		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
+		defer log.FinalTotals()
 		return performUpgrade(api, upgradableInstances, cfg.ParallelUpgrades, log)
 	}
+}
+
+func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.ServiceInstance, minVersionRequired string) ([]ccapi.ServiceInstance, error) {
+	checker, err := versionchecker.New(minVersionRequired)
+	if err != nil {
+		return nil, err
+	}
+
+	var filteredInstances []ccapi.ServiceInstance
+	for _, instance := range instances {
+		is, err := checker.IsInstanceVersionLessThanMinimumRequired(instance.MaintenanceInfoVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if is {
+			filteredInstances = append(filteredInstances, instance)
+		}
+	}
+	return filteredInstances, nil
 }
 
 func checkDeactivatedPlans(log Logger, instances []ccapi.ServiceInstance) error {
@@ -131,31 +177,17 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 		}
 	})
 
-	log.FinalTotals()
 	if !log.HasUpgradeSucceeded() {
 		return errors.New("there were failures upgrading one or more instances. Review the logs for more information")
 	}
 	return nil
 }
 
-func performCheckUpToDate(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
-	err := performDryRun(upgradableInstances, log)
-	if err != nil {
-		return fmt.Errorf("check up-to-date failed because dry-run returned the following error: %w", err)
+func performDryRun(serviceInstances []ccapi.ServiceInstance, log Logger) {
+	for _, i := range serviceInstances {
+		dryRunErr := fmt.Errorf("dry-run prevented upgrade instance guid %s", i.GUID)
+		log.UpgradeFailed(i, time.Duration(0), dryRunErr)
 	}
-	if len(upgradableInstances) > 0 {
-		return fmt.Errorf("check up-to-date failed: found %d instances which are not up-to-date", len(upgradableInstances))
-	}
-	return nil
-}
-
-func performDryRun(upgradableInstances []ccapi.ServiceInstance, log Logger) error {
-	log.Printf("the following service instances would be upgraded:")
-	for _, i := range upgradableInstances {
-		log.UpgradeFailed(i, time.Duration(0), fmt.Errorf("dry-run prevented upgrade"))
-	}
-	log.FinalTotals()
-	return nil
 }
 
 func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.ServiceInstance) []ccapi.ServiceInstance {

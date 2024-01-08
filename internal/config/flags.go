@@ -19,7 +19,11 @@ const (
 
 	checkUpToDateDefault     = false
 	checkUpToDateFlag        = "check-up-to-date"
-	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date - implies a dry-run"
+	checkUpToDateDescription = "checks and fails if any service instance is not up-to-date. An instance is not up-to-date if it is marked as upgradable or belongs to a deactivated plan"
+
+	minVersionRequiredDefault     = ""
+	minVersionRequiredFlag        = "min-version-required"
+	minVersionRequiredDescription = "--min-version-required <major.minor.patch>. Checks and fails if any service instance has a version lower than the specified"
 
 	checkDeactivatedPlansDefault     = false
 	checkDeactivatedPlansFlag        = "check-deactivated-plans"

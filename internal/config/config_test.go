@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"fmt"
+
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
@@ -305,6 +306,44 @@ var _ = Describe("Config", func() {
 			It("is true", func() {
 				Expect(cfgErr).NotTo(HaveOccurred())
 				Expect(cfg.DryRun).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("min-version-required", func() {
+		When("not specified", func() {
+			It("is not set", func() {
+				Expect(cfg.MinVersionRequired).To(BeEmpty())
+			})
+		})
+
+		When("specified without version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-min-version-required=")
+			})
+
+			It("an empty value is set", func() {
+				Expect(cfg.MinVersionRequired).To(BeEmpty())
+			})
+		})
+
+		When("specified with a non-semver version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-min-version-required", "invalid version")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(ContainSubstring("error parsing min-version-required option: Malformed version: invalid version")))
+			})
+		})
+
+		When("specified with version", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-min-version-required", "1.3.0")
+			})
+
+			It("is set and the value is the version", func() {
+				Expect(cfg.MinVersionRequired).To(Equal("1.3.0"))
 			})
 		})
 	})

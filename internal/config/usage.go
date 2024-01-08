@@ -14,6 +14,7 @@ func UsageOptions() map[string]string {
 		parallelFlag:              parallelDescription,
 		httpLoggingFlag:           httpLoggingDescription,
 		dryRunFlag:                dryRunDescription,
+		minVersionRequiredFlag:    minVersionRequiredDescription,
 		checkUpToDateFlag:         checkUpToDateDescription,
 		checkDeactivatedPlansFlag: checkDeactivatedPlansDescription,
 	}
