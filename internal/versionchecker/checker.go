@@ -1,4 +1,4 @@
-package version_checker
+package versionchecker
 
 import (
 	"fmt"

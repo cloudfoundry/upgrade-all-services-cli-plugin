@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
-	"upgrade-all-services-cli-plugin/internal/version_checker"
+	"upgrade-all-services-cli-plugin/internal/versionchecker"
 	"upgrade-all-services-cli-plugin/internal/workers"
 )
 
@@ -106,7 +106,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 }
 
 func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.ServiceInstance, minVersionRequired string) ([]ccapi.ServiceInstance, error) {
-	checker, err := version_checker.New(minVersionRequired)
+	checker, err := versionchecker.New(minVersionRequired)
 	if err != nil {
 		return nil, err
 	}
