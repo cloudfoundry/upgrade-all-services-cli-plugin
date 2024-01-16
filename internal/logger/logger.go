@@ -50,7 +50,7 @@ func (l *Logger) SkippingInstance(instance ccapi.ServiceInstance) {
 	defer l.lock.Unlock()
 
 	l.skipped++
-	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation: Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperationType, instance.LastOperationState)
+	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperationType, instance.LastOperationState)
 }
 
 func (l *Logger) DeactivatedPlan(instance ccapi.ServiceInstance) {
@@ -59,7 +59,7 @@ func (l *Logger) DeactivatedPlan(instance ccapi.ServiceInstance) {
 
 	l.skipped++
 	l.printf(
-		"skipping instance: %q guid: %q Deactivated Plan: %q Offering: %q Offering guid: %q Upgrade Available: %t Last Operation: Type: %q State: %q",
+		"skipping instance: %q guid: %q Deactivated Plan: %q Offering: %q Offering guid: %q Upgrade Available: %t Last Operation Type: %q State: %q",
 		instance.Name,
 		instance.GUID,
 		instance.ServicePlanName,

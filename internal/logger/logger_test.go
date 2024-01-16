@@ -45,14 +45,14 @@ var _ = Describe("Logger", func() {
 		result := captureStdout(func() {
 			l.SkippingInstance(createFailedInstance())
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "create-failed-instance" guid: "create-failed-instance-guid" Upgrade Available: true Last Operation: Type: "create" State: "failed"\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "create-failed-instance" guid: "create-failed-instance-guid" Upgrade Available: true Last Operation Type: "create" State: "failed"\n`))
 	})
 
 	It("can log that there are deactivated plans", func() {
 		result := captureStdout(func() {
 			l.DeactivatedPlan(instanceWithDeactivatedPlan(1))
 		})
-		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-service-instance-1" guid: "my-service-instance-guid-1" Deactivated Plan: "fake-plan-name-1" Offering: "fake-soffer-name-1" Offering guid: "fake-soffer-guid-1" Upgrade Available: true Last Operation: Type: "last-operation-type-1" State: "last-operation-state-1"\n`))
+		Expect(result).To(MatchRegexp(timestampRegexp + `: skipping instance: "my-service-instance-1" guid: "my-service-instance-guid-1" Deactivated Plan: "fake-plan-name-1" Offering: "fake-soffer-name-1" Offering guid: "fake-soffer-guid-1" Upgrade Available: true Last Operation Type: "last-operation-type-1" State: "last-operation-state-1"\n`))
 	})
 
 	It("can log the start of an upgrade", func() {
