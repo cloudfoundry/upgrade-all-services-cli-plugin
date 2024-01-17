@@ -10,13 +10,8 @@ type checker struct {
 	minimumVersionRequired *version.Version
 }
 
-func New(minimumRequiredVersion string) (*checker, error) {
-	ver, err := version.NewSemver(minimumRequiredVersion)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect minimum required version: %w", err)
-	}
-
-	return &checker{minimumVersionRequired: ver}, nil
+func New(minimumRequiredVersion *version.Version) (*checker, error) {
+	return &checker{minimumVersionRequired: minimumRequiredVersion}, nil
 }
 
 func (c *checker) IsInstanceVersionLessThanMinimumRequired(instanceVersion string) (bool, error) {

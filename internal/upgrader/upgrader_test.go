@@ -6,12 +6,13 @@ import (
 	"os"
 	"sync"
 	"time"
-
 	"upgrade-all-services-cli-plugin/internal/ccapi"
+	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/logger"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 	"upgrade-all-services-cli-plugin/internal/upgrader/upgraderfakes"
 
+	"github.com/hashicorp/go-version"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -157,7 +158,7 @@ var _ = Describe("Upgrade", func() {
 				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
 					BrokerName:       fakeBrokerName,
 					ParallelUpgrades: 5,
-					DryRun:           true,
+					Action:           config.DryRunAction,
 				})
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -188,7 +189,7 @@ var _ = Describe("Upgrade", func() {
 				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
 					BrokerName:       fakeBrokerName,
 					ParallelUpgrades: 5,
-					CheckUpToDate:    true,
+					Action:           config.CheckUpToDateAction,
 				})
 				Expect(err).To(MatchError("found 3 instances which are not up-to-date"))
 			})
@@ -277,7 +278,7 @@ var _ = Describe("Upgrade", func() {
 					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
 						BrokerName:       fakeBrokerName,
 						ParallelUpgrades: 1,
-						CheckUpToDate:    true,
+						Action:           config.CheckUpToDateAction,
 					})
 					Expect(err).To(MatchError(ContainSubstring("found 1 instances which are not up-to-date")))
 					Expect(err).To(MatchError(ContainSubstring("discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services")))
@@ -312,9 +313,10 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstance3}, nil)
 
 			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:         fakeBrokerName,
-				ParallelUpgrades:   5,
-				MinVersionRequired: "1.5.7",
+				BrokerName:       fakeBrokerName,
+				ParallelUpgrades: 5,
+				Action:           config.MinVersionCheckAction,
+				MinVersion:       version.Must(version.NewVersion("1.5.7")),
 			})
 
 			Expect(err).To(MatchError("found 2 service instances with a version less than the minimum required"))
@@ -334,30 +336,13 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1}, nil)
 
 			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:         fakeBrokerName,
-				ParallelUpgrades:   5,
-				MinVersionRequired: "1.5.7",
+				BrokerName:       fakeBrokerName,
+				ParallelUpgrades: 5,
+				Action:           config.MinVersionCheckAction,
+				MinVersion:       version.Must(version.NewVersion("1.5.7")),
 			})
 
 			Expect(err).To(MatchError("incorrect instance version: Malformed version: invalid version"))
-			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
-		})
-
-		It("should return an error because the flag version is a malformed version", func() {
-			fakeInstance1 := ccapi.ServiceInstance{
-				GUID:                   "fake-instance-guid-1",
-				MaintenanceInfoVersion: "1.4.7",
-			}
-			fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{{GUID: "fake-plan-1-guid"}}, nil)
-			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1}, nil)
-
-			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:         fakeBrokerName,
-				ParallelUpgrades:   5,
-				MinVersionRequired: "invalid version",
-			})
-
-			Expect(err).To(MatchError("incorrect minimum required version: Malformed version: invalid version"))
 			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
 		})
 
@@ -369,9 +354,10 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstance3}, nil)
 
 			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:         fakeBrokerName,
-				ParallelUpgrades:   5,
-				MinVersionRequired: "1.3.0",
+				BrokerName:       fakeBrokerName,
+				ParallelUpgrades: 5,
+				Action:           config.MinVersionCheckAction,
+				MinVersion:       version.Must(version.NewVersion("1.3.0")),
 			})
 
 			Expect(err).NotTo(HaveOccurred())
@@ -432,9 +418,9 @@ var _ = Describe("Upgrade", func() {
 			It("returns an error", func() {
 
 				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-					BrokerName:            fakeBrokerName,
-					ParallelUpgrades:      5,
-					CheckDeactivatedPlans: true,
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 5,
+					Action:           config.CheckDeactivatedPlansAction,
 				})
 
 				Expect(err).To(
@@ -629,15 +615,12 @@ var _ = Describe("Upgrade", func() {
 
 		It("should return an error", func() {
 			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:            fakeBrokerName,
-				ParallelUpgrades:      1,
-				DryRun:                false,
-				CheckDeactivatedPlans: false,
+				BrokerName:       fakeBrokerName,
+				ParallelUpgrades: 1,
 			})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("there were failures upgrading one or more instances. Review the logs for more information"))
-
 		})
 	})
 })
