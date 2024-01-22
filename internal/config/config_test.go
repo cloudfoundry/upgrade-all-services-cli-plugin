@@ -2,10 +2,10 @@ package config_test
 
 import (
 	"fmt"
-
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
+	"github.com/hashicorp/go-version"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -28,6 +28,38 @@ var _ = Describe("Config", func() {
 
 	JustBeforeEach(func() {
 		cfg, cfgErr = config.ParseConfig(fakeCLIConnection, fakeArgs)
+	})
+
+	DescribeTable("invalid flag combinations",
+		func(flags []string, message string) {
+			fakeArgs = append(fakeArgs, flags...)
+
+			// JustBeforeEach() pattern doesn't work with table tests
+			cfg, cfgErr = config.ParseConfig(fakeCLIConnection, fakeArgs)
+
+			Expect(cfgErr).To(MatchError(fmt.Sprintf("invalid flag combination: %s", message)))
+			Expect(cfg.Action).To(Equal(config.InvalidAction))
+		},
+		Entry(nil, []string{"--check-deactivated-plans", "--check-up-to-date"}, "--check-deactivated-plans, --check-up-to-date"),
+		Entry(nil, []string{"--check-deactivated-plans", "--dry-run"}, "--check-deactivated-plans, --dry-run"),
+		Entry(nil, []string{"--check-deactivated-plans", "--min-version-required", "1.2.3"}, "--check-deactivated-plans, --min-version-required"),
+		Entry(nil, []string{"--check-up-to-date", "--dry-run"}, "--check-up-to-date, --dry-run"),
+		Entry(nil, []string{"--check-up-to-date", "--min-version-required", "1.2.3"}, "--check-up-to-date, --min-version-required"),
+		Entry(nil, []string{"--dry-run", "--min-version-required", "1.2.3"}, "--dry-run, --min-version-required"),
+		Entry(nil, []string{"--check-deactivated-plans", "--check-up-to-date", "--dry-run", "--min-version-required", "1.2.3"}, "--check-deactivated-plans, --check-up-to-date, --dry-run, --min-version-required"),
+	)
+
+	Describe("flags combinations with --parallel", func() {
+		// Although combining --parallel with other actions makes no sense, we do not fail
+		When("--parallel is specified with another flag", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-dry-run", "-parallel", "10")
+			})
+
+			It("does not fail", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+			})
+		})
 	})
 
 	Describe("checking logged in", func() {
@@ -290,30 +322,28 @@ var _ = Describe("Config", func() {
 		})
 	})
 
-	Describe("dry-run", func() {
-		When("not specified", func() {
-			It("is false", func() {
-				Expect(cfg.DryRun).To(BeFalse())
-				Expect(cfgErr).NotTo(HaveOccurred())
-			})
-		})
+	DescribeTable("determining the action",
+		func(flags []string, action config.Action) {
+			fakeArgs = append(fakeArgs, flags...)
 
-		When("specified", func() {
-			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-dry-run")
-			})
+			// JustBeforeEach() pattern doesn't work with table tests
+			cfg, cfgErr = config.ParseConfig(fakeCLIConnection, fakeArgs)
 
-			It("is true", func() {
-				Expect(cfgErr).NotTo(HaveOccurred())
-				Expect(cfg.DryRun).To(BeTrue())
-			})
-		})
-	})
+			Expect(cfgErr).NotTo(HaveOccurred())
+			Expect(cfg.Action).To(Equal(action))
+		},
+		Entry("none", nil, config.UpgradeAction),
+		Entry("", []string{"--parallel", "10"}, config.UpgradeAction),
+		Entry(nil, []string{"--check-deactivated-plans"}, config.CheckDeactivatedPlansAction),
+		Entry(nil, []string{"--check-up-to-date"}, config.CheckUpToDateAction),
+		Entry(nil, []string{"--dry-run"}, config.DryRunAction),
+		Entry(nil, []string{"--min-version-required", "1.2.3"}, config.MinVersionCheckAction),
+	)
 
 	Describe("min-version-required", func() {
 		When("not specified", func() {
 			It("is not set", func() {
-				Expect(cfg.MinVersionRequired).To(BeEmpty())
+				Expect(cfg.MinVersion).To(BeNil())
 			})
 		})
 
@@ -323,7 +353,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("an empty value is set", func() {
-				Expect(cfg.MinVersionRequired).To(BeEmpty())
+				Expect(cfg.MinVersion).To(BeNil())
 			})
 		})
 
@@ -343,19 +373,7 @@ var _ = Describe("Config", func() {
 			})
 
 			It("is set and the value is the version", func() {
-				Expect(cfg.MinVersionRequired).To(Equal("1.3.0"))
-			})
-		})
-	})
-
-	Describe("invalid combinations", func() {
-		When("-dry-run and -parallel are specified together", func() {
-			BeforeEach(func() {
-				fakeArgs = append(fakeArgs, "-dry-run", "-parallel", "10")
-			})
-
-			It("succeeds", func() {
-				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.MinVersion).To(Equal(version.Must(version.NewVersion("1.3.0"))))
 			})
 		})
 	})

@@ -9,6 +9,9 @@ import (
 var version = "0.0.0"
 
 func pluginVersion() plugin.VersionType {
+	// NOTE: we use library "github.com/hashicorp/go-version" elsewhere, but it doesn't provide the
+	// ability to easily parse out major/minor/fix, so we use "github.com/blang/semver/v4" here
+	// and only here
 	v := semver.MustParse(version)
 	return plugin.VersionType{
 		Major: int(v.Major),

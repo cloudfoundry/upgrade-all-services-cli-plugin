@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
 	"upgrade-all-services-cli-plugin/internal/ccapi"
+	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/versionchecker"
 	"upgrade-all-services-cli-plugin/internal/workers"
+
+	"github.com/hashicorp/go-version"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -32,12 +34,10 @@ type Logger interface {
 }
 
 type UpgradeConfig struct {
-	BrokerName            string
-	ParallelUpgrades      int
-	DryRun                bool
-	MinVersionRequired    string
-	CheckUpToDate         bool
-	CheckDeactivatedPlans bool
+	BrokerName       string
+	ParallelUpgrades int
+	Action           config.Action
+	MinVersion       *version.Version
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
@@ -59,9 +59,9 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	upgradableInstances := discoverInstancesWithPendingUpgrade(log, serviceInstances)
 
 	switch {
-	case cfg.CheckDeactivatedPlans:
+	case cfg.Action == config.CheckDeactivatedPlansAction:
 		return checkDeactivatedPlans(log, serviceInstances)
-	case cfg.CheckUpToDate:
+	case cfg.Action == config.CheckUpToDateAction:
 		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
 		defer log.FinalTotals()
 		var errs MultiError
@@ -75,8 +75,8 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		}
 
 		return nil
-	case cfg.MinVersionRequired != "":
-		filteredInstances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersionRequired)
+	case cfg.Action == config.MinVersionCheckAction:
+		filteredInstances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersion)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
-	case cfg.DryRun:
+	case cfg.Action == config.DryRunAction:
 		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
 		defer log.FinalTotals()
 		performDryRun(upgradableInstances, log)
@@ -105,8 +105,8 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	}
 }
 
-func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.ServiceInstance, minVersionRequired string) ([]ccapi.ServiceInstance, error) {
-	checker, err := versionchecker.New(minVersionRequired)
+func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.ServiceInstance, minVersion *version.Version) ([]ccapi.ServiceInstance, error) {
+	checker, err := versionchecker.New(minVersion)
 	if err != nil {
 		return nil, err
 	}
