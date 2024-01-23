@@ -39,3 +39,12 @@ Options:
     -check-up-to-date                         - checks and fails if any service instance is not up-to-date. An instance is not up-to-date if it is marked as upgradable or belongs to a deactivated plan
     -check-deactivated-plans                  - checks and fails if any of the plans have been deactivated
 ```
+
+### Internals
+
+#### Semver
+Both the `github.com/blang/semver/v4` and `github.com/hashicorp/go-version` semver libraries are used. The aim is to use
+`github.com/hashicorp/go-version` as the default and `github.com/blang/semver/v4` where needed. While you might imagine
+that using one library would be cleaner than using two, we make use of unique features in each library. Attempts
+have been made to standardise on one library, but it resulted in worse code, so we decided to continue to use two
+libraries.
