@@ -41,6 +41,11 @@ type UpgradeConfig struct {
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
+	switch cfg.Action {
+	case config.CheckDeactivatedPlansAction:
+		return checkDeactivatedPlans(api, log, cfg.BrokerName)
+	}
+
 	servicePlans, err := api.GetServicePlans(cfg.BrokerName)
 	if err != nil {
 		return err
@@ -59,8 +64,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	upgradableInstances := discoverInstancesWithPendingUpgrade(log, serviceInstances)
 
 	switch {
-	case cfg.Action == config.CheckDeactivatedPlansAction:
-		return checkDeactivatedPlans(log, serviceInstances)
 	case cfg.Action == config.CheckUpToDateAction:
 		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
 		defer log.FinalTotals()
@@ -69,7 +72,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		if len(upgradableInstances) > 0 {
 			errs.Append(fmt.Errorf("found %d instances which are not up-to-date", len(upgradableInstances)))
 		}
-		errs.Append(checkDeactivatedPlans(log, serviceInstances))
 		if len(errs.Errors) > 0 {
 			return &errs
 		}
@@ -123,23 +125,6 @@ func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.Serv
 		}
 	}
 	return filteredInstances, nil
-}
-
-func checkDeactivatedPlans(log Logger, instances []ccapi.ServiceInstance) error {
-	var deactivatedPlanFound bool
-	for _, instance := range instances {
-		if instance.ServicePlanDeactivated {
-			deactivatedPlanFound = true
-			log.DeactivatedPlan(instance)
-		}
-	}
-
-	if deactivatedPlanFound {
-		return errors.New(
-			"discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services",
-		)
-	}
-	return nil
 }
 
 func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, parallelUpgrades int, log Logger) error {
