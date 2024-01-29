@@ -1,4 +1,4 @@
-## upgrade-all-services (cf cli plugin)
+## upgrade-all-services (cf-cli plugin)
 
 A CF-CLI plugin for upgrading all service instances in a CF foundation.
 
