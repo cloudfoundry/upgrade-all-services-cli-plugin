@@ -69,7 +69,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		if len(upgradableInstances) > 0 {
 			errs.Append(fmt.Errorf("found %d instances which are not up-to-date", len(upgradableInstances)))
 		}
-		errs.Append(checkDeactivatedPlans(log, serviceInstances))
 		if len(errs.Errors) > 0 {
 			return &errs
 		}
