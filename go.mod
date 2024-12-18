@@ -8,7 +8,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/google/gops v0.3.28
 	github.com/hashicorp/go-version v1.7.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.10.0
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.0
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
 	golang.org/x/tools v0.28.0
