@@ -1,6 +1,6 @@
 module upgrade-all-services-cli-plugin
 
-go 1.24.6
+go 1.24.0
 
 require (
 	code.cloudfoundry.org/cli v7.1.0+incompatible
