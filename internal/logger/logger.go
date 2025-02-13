@@ -16,7 +16,7 @@ func New(period time.Duration) *Logger {
 
 	go func() {
 		for range l.ticker.C {
-			l.Printf(l.tickerMessage())
+			l.Printf("%s", l.tickerMessage())
 		}
 	}()
 
@@ -116,7 +116,7 @@ func (l *Logger) FinalTotals() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.printf(l.tickerMessage())
+	l.printf("%s", l.tickerMessage())
 	l.separator()
 	l.printf("skipped %d instances", l.skipped)
 	l.printf("successfully upgraded %d instances", l.successes)
