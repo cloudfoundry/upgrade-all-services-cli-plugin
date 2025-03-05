@@ -9,7 +9,7 @@ require (
 	github.com/google/gops v0.3.28
 	github.com/hashicorp/go-version v1.7.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
-	github.com/onsi/ginkgo/v2 v2.22.2
+	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2
 	golang.org/x/tools v0.31.0
 	honnef.co/go/tools v0.6.0
