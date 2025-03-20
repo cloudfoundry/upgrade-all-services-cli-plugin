@@ -13,7 +13,7 @@ test: download lint test-units ## run lint and unit tests
 
 .PHONY: test-units
 test-units:
-	go run github.com/onsi/ginkgo/v2/ginkgo -r -p
+	go tool ginkgo -r -p
 
 .PHONY: download
 download: ## download go module dependencies
@@ -31,7 +31,7 @@ checkformat: ## check that the code is formatted correctly
       fi
 
 checkimports: ## check that imports are formatted correctly
-	@@if [ -n "$$(go run golang.org/x/tools/cmd/goimports -l -d .)" ]; then \
+	@@if [ -n "$$(go tool goimports -l -d .)" ]; then \
 		echo "goimports check failed: run 'make format'";               \
 		exit 1;                                                         \
 	fi
@@ -40,7 +40,7 @@ vet: ## run go vet
 	go vet ./...
 
 staticcheck: ## run staticcheck
-	go run honnef.co/go/tools/cmd/staticcheck ./...
+	go tool staticcheck ./...
 
 
 ###### Format #################################################################
@@ -48,7 +48,7 @@ staticcheck: ## run staticcheck
 .PHONY: format
 format: ## format the source
 	gofmt -s -e -l -w .
-	go run golang.org/x/tools/cmd/goimports -l -w .
+	go tool goimports -l -w .
 
 ###### Build ##################################################################
 
