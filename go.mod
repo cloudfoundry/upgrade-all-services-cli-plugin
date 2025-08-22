@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/jsonry v1.1.4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/onsi/ginkgo/v2 v2.25.0
+	github.com/onsi/ginkgo/v2 v2.25.1
 	github.com/onsi/gomega v1.38.0
 )
 
