@@ -8,7 +8,7 @@ func Run(count int, w worker) {
 	var wg sync.WaitGroup
 	wg.Add(count)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		go func() {
 			w()
 			wg.Done()
