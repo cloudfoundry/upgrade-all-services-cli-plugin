@@ -1,6 +1,9 @@
 package integrationtests_test
 
 import (
+	"encoding/binary"
+	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -12,8 +15,8 @@ import (
 )
 
 var (
-	cfPath string
-	capi   *fakecapi.FakeCAPI
+	cf   func(...string) *Session
+	capi *fakecapi.FakeCAPI
 )
 
 func TestIntegration(t *testing.T) {
@@ -26,34 +29,62 @@ var _ = SynchronizedBeforeSuite(
 		cf, err := exec.LookPath("cf")
 		Expect(err).NotTo(HaveOccurred(), "The 'cf' executable is a pre-requisite for running this test")
 
-		plugin, err := Build("upgrade-all-services-cli-plugin")
+		pluginPath, err := Build("upgrade-all-services-cli-plugin")
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(CleanupBuildArtifacts)
 
-		session, err := Start(exec.Command(cf, "install-plugin", "-f", plugin), GinkgoWriter, GinkgoWriter)
-		Expect(err).NotTo(HaveOccurred())
+		return encode(cf, pluginPath)
+	},
+	func(data []byte) {
+		cfPath, pluginPath := decode(data)
+
+		// The CF CLI does not concurrently handle installation of plugins and login/auth because under the hood the
+		// different instances write to the same file. Unless we use different home directories for each instance,
+		// in which case it all works.
+		homePath := GinkgoT().TempDir()
+
+		cf = func(args ...string) *Session {
+			cmd := exec.Command(cfPath, args...)
+			cmd.Env = append(
+				os.Environ(),
+				fmt.Sprintf("HOME=%s", homePath),
+			)
+			session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			return session
+		}
+
+		session := cf("install-plugin", "-f", pluginPath)
 		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 
-		return []byte(cf)
-	},
-	func(input []byte) {
-		cfPath = string(input)
+		capi = fakecapi.New()
+		DeferCleanup(func() {
+			capi.Stop()
+		})
+
+		Eventually(cf("api", "--skip-ssl-validation", capi.URL)).WithTimeout(time.Minute).Should(Exit(0))
+		Eventually(cf("auth", "foo", "bar")).WithTimeout(time.Minute).Should(Exit(0))
 	},
 )
 
 var _ = BeforeEach(func() {
-	capi = fakecapi.New()
-	DeferCleanup(func() {
-		capi.Stop()
-	})
-
-	Eventually(cf("api", "--skip-ssl-validation", capi.URL)).WithTimeout(time.Minute).Should(Exit(0))
-	Eventually(cf("auth", "foo", "bar")).WithTimeout(time.Minute).Should(Exit(0))
+	capi.Reset()
 })
 
-func cf(args ...string) *Session {
-	cmd := exec.Command(cfPath, args...)
-	session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-	return session
+// encode safely encodes two strings as a []byte
+func encode(cfPath, pluginPath string) []byte {
+	data := make([]byte, 4)
+	binary.LittleEndian.PutUint32(data, uint32(len(cfPath)))
+	data = fmt.Append(data, cfPath)
+	data = fmt.Append(data, pluginPath)
+
+	return data
+}
+
+// decode safely decodes two strings from a []byte
+func decode(data []byte) (cfPath, pluginPath string) {
+	length := binary.LittleEndian.Uint32(data[:4])
+	cfPath = string(data[4 : 4+length])
+	pluginPath = string(data[4+length:])
+	return
 }
