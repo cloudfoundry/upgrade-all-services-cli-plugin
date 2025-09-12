@@ -13,10 +13,10 @@ import (
 func WithServicePlan(plan ServicePlan, opts ...func(*FakeCAPI, ServicePlan)) func(*FakeCAPI, ServiceOffering) {
 	return func(f *FakeCAPI, offering ServiceOffering) {
 		if plan.Name == "" {
-			plan.Name = guid()
+			plan.Name = fakeName("plan")
 		}
 		if plan.GUID == "" {
-			plan.GUID = guid()
+			plan.GUID = stableGUID(plan.Name)
 		}
 		plan.ServiceOfferingName = offering.Name
 		plan.ServiceOfferingGUID = offering.GUID
@@ -33,6 +33,7 @@ type ServicePlan struct {
 	Name                string `json:"name"`
 	GUID                string `json:"guid"`
 	Version             string `jsonry:"maintenance_info.version"`
+	Available           bool   `json:"available"`
 	ServiceOfferingName string `json:"-"`
 	ServiceOfferingGUID string `jsonry:"relationships.service_offering.data.guid"`
 }

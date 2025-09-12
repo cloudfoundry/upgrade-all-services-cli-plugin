@@ -3,11 +3,11 @@ package fakecapi
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 )
 
 // fakeJWT is a valid JWT generated using http://jwt.io with a payload "exp" of 9999999999
@@ -25,14 +25,11 @@ func New() *FakeCAPI {
 	}
 
 	f := FakeCAPI{
-		URL:       fmt.Sprintf("http://localhost:%d", capiPort),
-		loginURL:  fmt.Sprintf("http://localhost:%d", loginPort),
-		brokers:   make(map[string]ServiceBroker),
-		plans:     make(map[string]ServicePlan),
-		offerings: make(map[string]ServiceOffering),
-		instances: make(map[string]ServiceInstance),
+		URL:      fmt.Sprintf("http://localhost:%d", capiPort),
+		loginURL: fmt.Sprintf("http://localhost:%d", loginPort),
 	}
 
+	f.Reset()
 	f.stopLogin = start(loginMux(), loginPort)
 	f.stopCAPI = start(f.capiMux(), capiPort)
 
@@ -48,6 +45,13 @@ type FakeCAPI struct {
 	plans     map[string]ServicePlan
 	offerings map[string]ServiceOffering
 	instances map[string]ServiceInstance
+}
+
+func (f *FakeCAPI) Reset() {
+	f.brokers = make(map[string]ServiceBroker)
+	f.plans = make(map[string]ServicePlan)
+	f.offerings = make(map[string]ServiceOffering)
+	f.instances = make(map[string]ServiceInstance)
 }
 
 func (f *FakeCAPI) Stop() {
@@ -98,9 +102,23 @@ func start(handler http.Handler, port int) (stop func()) {
 		}
 	}()
 
+	// Wait for the server to actually start
+	expiry := time.Now().Add(10 * time.Second)
+	for !ping(port) {
+		if time.Now().After(expiry) {
+			panic(fmt.Sprintf("timed out waiting for ping on port %d", port))
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
 	return func() {
 		_ = svr.Shutdown(context.Background())
 	}
+}
+
+func ping(port int) bool {
+	_, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 100*time.Millisecond)
+	return err == nil
 }
 
 func freePort() (int, error) {
@@ -111,15 +129,6 @@ func freePort() (int, error) {
 
 	defer listener.Close()
 	return listener.Addr().(*net.TCPAddr).Port, nil
-}
-
-func guid() string {
-	data := make([]byte, 16)
-	if _, err := rand.Read(data); err != nil {
-		panic(err)
-	}
-
-	return fmt.Sprintf("%x-%x-%x-%x-%x", data[0:4], data[4:6], data[6:8], data[8:10], data[10:])
 }
 
 func filter[A any](a []A, cb func(A) bool) (result []A) {
