@@ -33,6 +33,7 @@ type ServicePlan struct {
 	Name                string `json:"name"`
 	GUID                string `json:"guid"`
 	Version             string `jsonry:"maintenance_info.version"`
+	Available           bool   `json:"available"`
 	ServiceOfferingName string `json:"-"`
 	ServiceOfferingGUID string `jsonry:"relationships.service_offering.data.guid"`
 }

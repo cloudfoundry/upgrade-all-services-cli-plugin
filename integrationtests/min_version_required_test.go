@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("MinVersionRequired", func() {
+var _ = Describe("-min-version-required", func() {
 	const brokerName = "min-ver-broker"
 
 	BeforeEach(func() {
