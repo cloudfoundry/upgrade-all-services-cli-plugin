@@ -55,9 +55,9 @@ var _ = Describe("-check-up-to-date", func() {
 \S+: upgradable instances: 2
 \S+: ---
 \S+: starting upgrade...
-\S+: upgrade of instance: "service-instance-2" guid: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f34d21395d3d2d8d244769fc2ceafa359" failed after 0s: dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f34d21395d3d2d8d244769fc2ceafa359
-\S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358ce662614b25499cd4ebf411f5e6ea55ae" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358ce662614b25499cd4ebf411f5e6ea55ae
-\S+: skipping instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af020db5207350e8f031a12585cef7accd9" Deactivated Plan: "service-plan-3" Offering: "service-offering-2" Offering guid: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea4412b95dbebf58dda02ee194c7c4598b" Upgrade Available: false Last Operation Type: "create" State: "succeeded"
+\S+: upgrade of instance: "service-instance-2" guid: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f" failed after 0s: dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f
+\S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c
+\S+: skipping instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af0" Deactivated Plan: "service-plan-3" Offering: "service-offering-2" Offering guid: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea" Upgrade Available: false Last Operation Type: "create" State: "succeeded"
 \S+: upgraded 2 of 2
 \S+: ---
 \S+: skipped 1 instances
@@ -66,33 +66,33 @@ var _ = Describe("-check-up-to-date", func() {
 \S+: 
 
 \s+Service Instance Name: "service-instance-2"
-\s+Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f34d21395d3d2d8d244769fc2ceafa359"
+\s+Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
 \s+Service Version: "1.2.2"
-\s+Details: "dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f34d21395d3d2d8d244769fc2ceafa359"
+\s+Details: "dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
 \s+Org Name: "fake-org"
 \s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 \s+Space Name: "fake-space"
 \s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
 \s+Plan Name: "service-plan1"
-\s+Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14254a50e4ad138cb08b109433e249a934"
+\s+Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
 \s+Plan Version: "1.2.3"
 \s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa2e7736a44b2e4ea39df28a5c1e96c760"
+\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
 
 
 \s+Service Instance Name: "service-instance-3"
-\s+Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358ce662614b25499cd4ebf411f5e6ea55ae"
+\s+Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
 \s+Service Version: "1.2.0"
-\s+Details: "dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358ce662614b25499cd4ebf411f5e6ea55ae"
+\s+Details: "dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c"
 \s+Org Name: "fake-org"
 \s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 \s+Space Name: "fake-space"
 \s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
 \s+Plan Name: "service-plan-2"
-\s+Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02a8992444e56e9743dd4de35058e8373d"
+\s+Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
 \s+Plan Version: "1.2.3"
 \s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa2e7736a44b2e4ea39df28a5c1e96c760"
+\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
 `)))
 		Expect(session.Err).To(Say(strings.TrimSpace(`
 upgrade-all-services plugin failed: found 2 instances which are not up-to-date
