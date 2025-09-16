@@ -2,8 +2,23 @@ package ccapi
 
 import (
 	"fmt"
+	"os"
 	"time"
 )
+
+var pollingInterval = 10 * time.Second
+
+// This was added to speed up testing at scale. In the future it should be exposed via the config package.
+// But we haven't done that yet, as we wanted to improve the testing before changing the implementation.
+func init() {
+	if interval, ok := os.LookupEnv("CF_UPGRADE_ALL_PLUGIN_TESTING_POLLING_INTERVAL"); ok {
+		var err error
+		pollingInterval, err = time.ParseDuration(interval)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 func (c CCAPI) UpgradeServiceInstance(guid, miVersion string) error {
 	body := struct {
@@ -36,6 +51,6 @@ func (c CCAPI) UpgradeServiceInstance(guid, miVersion string) error {
 				return nil
 			}
 		}
-		time.Sleep(time.Second * 10)
+		time.Sleep(pollingInterval)
 	}
 }

@@ -54,6 +54,7 @@ var _ = SynchronizedBeforeSuite(
 			cmd.Env = append(
 				os.Environ(),
 				fmt.Sprintf("HOME=%s", homePath),
+				fmt.Sprintf("CF_UPGRADE_ALL_PLUGIN_TESTING_POLLING_INTERVAL=%s", 10*time.Millisecond),
 			)
 			session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
@@ -93,4 +94,12 @@ func decode(data []byte) (cfPath, pluginPath string) {
 	cfPath = string(data[4 : 4+length])
 	pluginPath = string(data[4+length:])
 	return
+}
+
+func repeat[A any](num int, base A) []A {
+	result := make([]A, 0, num)
+	for range num {
+		result = append(result, base)
+	}
+	return result
 }

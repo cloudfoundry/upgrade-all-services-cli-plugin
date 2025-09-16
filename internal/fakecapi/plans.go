@@ -13,7 +13,7 @@ import (
 func WithServicePlan(plan ServicePlan, opts ...func(*FakeCAPI, ServicePlan)) func(*FakeCAPI, ServiceOffering) {
 	return func(f *FakeCAPI, offering ServiceOffering) {
 		if plan.Name == "" {
-			plan.Name = fakeName("plan")
+			plan.Name = f.fakeName("plan")
 		}
 		if plan.GUID == "" {
 			plan.GUID = stableGUID(plan.Name)
@@ -38,7 +38,7 @@ type ServicePlan struct {
 	ServiceOfferingGUID string `jsonry:"relationships.service_offering.data.guid"`
 }
 
-func (f *FakeCAPI) servicePlanHandler() func(w http.ResponseWriter, r *http.Request) {
+func (f *FakeCAPI) listServicePlansHandler() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		includeServiceOffering := false
 

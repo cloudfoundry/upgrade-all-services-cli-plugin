@@ -2,10 +2,12 @@ package fakecapi
 
 import (
 	"fmt"
+	"io"
 	"maps"
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/jsonry"
 )
@@ -19,7 +21,7 @@ func WithServiceInstances(instances ...ServiceInstance) func(*FakeCAPI, ServiceP
 	return func(f *FakeCAPI, plan ServicePlan) {
 		for _, instance := range instances {
 			if instance.Name == "" {
-				instance.Name = fakeName("instance")
+				instance.Name = f.fakeName("instance")
 			}
 			if instance.GUID == "" {
 				instance.GUID = stableGUID(instance.Name)
@@ -36,23 +38,27 @@ func WithServiceInstances(instances ...ServiceInstance) func(*FakeCAPI, ServiceP
 			instance.ServiceOfferingGUID = plan.ServiceOfferingGUID
 			instance.SpaceGUID = spaceGUID
 
-			f.instances[instance.GUID] = instance
+			f.instances[instance.GUID] = &instance
 		}
 	}
 }
 
 type ServiceInstance struct {
-	Name                string `json:"name"`
-	GUID                string `json:"guid"`
-	ServicePlanGUID     string `jsonry:"relationships.service_plan.data.guid"`
-	SpaceGUID           string `jsonry:"relationships.space.data.guid"`
-	ServicePlanName     string `json:"-"`
-	ServiceOfferingGUID string `json:"-"`
-	ServiceOfferingName string `json:"-"`
-	Version             string `jsonry:"maintenance_info.version"`
-	UpgradeAvailable    bool   `json:"upgrade_available"`
-	LastOperationType   string `jsonry:"last_operation.type"`
-	LastOperationState  string `jsonry:"last_operation.state"`
+	Name                     string        `json:"name"`
+	GUID                     string        `json:"guid"`
+	ServicePlanGUID          string        `jsonry:"relationships.service_plan.data.guid"`
+	SpaceGUID                string        `jsonry:"relationships.space.data.guid"`
+	ServicePlanName          string        `json:"-"`
+	ServiceOfferingGUID      string        `json:"-"`
+	ServiceOfferingName      string        `json:"-"`
+	Version                  string        `jsonry:"maintenance_info.version"`
+	UpgradeAvailable         bool          `json:"upgrade_available"`
+	LastOperationType        string        `jsonry:"last_operation.type"`
+	LastOperationState       string        `jsonry:"last_operation.state"`
+	LastOperationDescription string        `jsonry:"last_operation.description"`
+	UpdateTime               time.Duration `json:"-"`
+	UpdateCount              int           `json:"-"`
+	FailTimes                int           `json:"-"`
 }
 
 type Space struct {
@@ -67,7 +73,7 @@ type Org struct {
 	GUID string `json:"guid"`
 }
 
-func (f *FakeCAPI) serviceInstanceHandler() func(w http.ResponseWriter, r *http.Request) {
+func (f *FakeCAPI) listServiceInstancesHandler() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		includeSpaces, includeOrgs := false, false
 
@@ -81,7 +87,7 @@ func (f *FakeCAPI) serviceInstanceHandler() func(w http.ResponseWriter, r *http.
 			case k == "fields[space.organization]" && v == "name,guid":
 				includeOrgs = true
 			case k == "service_plan_guids":
-				instances = filter(instances, func(p ServiceInstance) bool { return slices.Contains(strings.Split(v, ","), p.ServicePlanGUID) })
+				instances = filter(instances, func(p *ServiceInstance) bool { return slices.Contains(strings.Split(v, ","), p.ServicePlanGUID) })
 			default:
 				http.Error(w, fmt.Sprintf("unknown query filter %q with value %q", k, v), http.StatusBadRequest)
 				return
@@ -106,12 +112,12 @@ func (f *FakeCAPI) serviceInstanceHandler() func(w http.ResponseWriter, r *http.
 			})
 		}
 
-		slices.SortStableFunc(instances, func(a, b ServiceInstance) int { return strings.Compare(a.Name, b.Name) })
+		slices.SortStableFunc(instances, func(a, b *ServiceInstance) int { return strings.Compare(a.Name, b.Name) })
 
 		payload, err := jsonry.Marshal(struct {
-			Resources      []ServiceInstance `json:"resources"`
-			IncludedSpaces []Space           `jsonry:"included.spaces,omitempty"`
-			IncludedOrgs   []Org             `jsonry:"included.organizations,omitempty"`
+			Resources      []*ServiceInstance `json:"resources"`
+			IncludedSpaces []Space            `jsonry:"included.spaces,omitempty"`
+			IncludedOrgs   []Org              `jsonry:"included.organizations,omitempty"`
 		}{Resources: instances, IncludedSpaces: includedSpaces, IncludedOrgs: includedOrgs})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -119,5 +125,81 @@ func (f *FakeCAPI) serviceInstanceHandler() func(w http.ResponseWriter, r *http.
 		}
 
 		w.Write(payload)
+	}
+}
+
+func (f *FakeCAPI) getServiceInstanceHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		guid := r.PathValue("guid")
+		instance, ok := f.instances[guid]
+		if !ok {
+			http.Error(w, fmt.Sprintf("instance with guid %q not found", guid), http.StatusNotFound)
+			return
+		}
+
+		response, err := jsonry.Marshal(instance)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error marshaling service instance: %s", err), http.StatusInternalServerError)
+		}
+
+		w.Write(response)
+	}
+}
+
+func (f *FakeCAPI) updateServiceInstanceHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		guid := r.PathValue("guid")
+		instance, ok := f.instances[guid]
+		if !ok {
+			http.Error(w, fmt.Sprintf("instance with guid %q not found", guid), http.StatusNotFound)
+			return
+		}
+
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error reading body: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		var receiver struct {
+			Version string `jsonry:"maintenance_info.version"`
+		}
+		if err := jsonry.Unmarshal(data, &receiver); err != nil {
+			http.Error(w, fmt.Sprintf("error parsing body: %s", err), http.StatusBadRequest)
+		}
+
+		if planVersion := f.plans[instance.ServicePlanGUID].Version; receiver.Version != planVersion {
+			http.Error(w, "plan version %q does not match requested version %q", http.StatusBadRequest)
+			return
+		}
+
+		f.startOperation()
+		instance.LastOperationType = "update"
+		instance.LastOperationState = "in progress"
+		instance.LastOperationDescription = "update operation started"
+
+		response, err := jsonry.Marshal(instance)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error marshaling service instance: %s", err), http.StatusInternalServerError)
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+		w.Write(response)
+
+		go func() {
+			time.Sleep(instance.UpdateTime)
+			f.stopOperation()
+			instance.UpdateCount++
+
+			if instance.FailTimes > 0 {
+				instance.FailTimes--
+				instance.LastOperationState = "failed"
+				instance.LastOperationDescription = "failed as requested by test setup"
+				return
+			}
+
+			instance.LastOperationState = "succeeded"
+			instance.LastOperationDescription = "succeeded as requested by test setup"
+		}()
 	}
 }

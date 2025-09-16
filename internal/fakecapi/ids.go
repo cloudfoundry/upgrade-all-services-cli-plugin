@@ -5,12 +5,10 @@ import (
 	"fmt"
 )
 
-var fakeNameCount = make(map[string]int)
-
 // fakeName returns a test fake name for the specified resource kind
-func fakeName(kind string) string {
-	fakeNameCount[kind]++
-	return fmt.Sprintf("fake-%s-%d", kind, fakeNameCount[kind])
+func (f *FakeCAPI) fakeName(kind string) string {
+	f.fakeNameCount[kind]++
+	return fmt.Sprintf("fake-%s-%d", kind, f.fakeNameCount[kind])
 }
 
 // stableGUID returns a GUID that is a function of the specified string rather than random.
