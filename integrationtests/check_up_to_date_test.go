@@ -38,7 +38,7 @@ var _ = Describe("-check-up-to-date", func() {
 				fakecapi.WithServicePlan(
 					fakecapi.ServicePlan{Name: "service-plan-3", Available: false, Version: "1.2.3"},
 					fakecapi.WithServiceInstances(
-						fakecapi.ServiceInstance{Name: "service-instance-4", UpgradeAvailable: false, Version: "1.2.3", LastOperationType: "create", LastOperationState: "succeeded"},
+						fakecapi.ServiceInstance{Name: "service-instance-4", UpgradeAvailable: false, Version: "1.2.3", LastOperationType: "create"},
 					),
 				),
 			),

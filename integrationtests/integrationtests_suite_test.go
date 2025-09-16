@@ -25,16 +25,22 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(
+	// Test concurrency in Ginkgo works by using OS processes. This first function is run on process #1 and the result
+	// is passed to the second function. Note that any global variable set in this first function will only be available
+	// in process #1, which can result in confusing behavior. So to avoid confusion we don't set any variables.
+	// We just pass data via the function return value.
 	func() []byte {
-		cf, err := exec.LookPath("cf")
+		cfPath, err := exec.LookPath("cf")
 		Expect(err).NotTo(HaveOccurred(), "The 'cf' executable is a pre-requisite for running this test")
 
 		pluginPath, err := Build("upgrade-all-services-cli-plugin")
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(CleanupBuildArtifacts)
 
-		return encode(cf, pluginPath)
+		return encode(cfPath, pluginPath)
 	},
+	// This second function is run on all test processes, so any global variables set here are available in all processes.
+	// The input to this function is the output from the first function.
 	func(data []byte) {
 		cfPath, pluginPath := decode(data)
 

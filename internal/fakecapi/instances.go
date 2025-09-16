@@ -24,6 +24,12 @@ func WithServiceInstances(instances ...ServiceInstance) func(*FakeCAPI, ServiceP
 			if instance.GUID == "" {
 				instance.GUID = stableGUID(instance.Name)
 			}
+			if instance.LastOperationType == "" {
+				instance.LastOperationType = "update"
+			}
+			if instance.LastOperationState == "" {
+				instance.LastOperationState = "succeeded"
+			}
 			instance.ServicePlanName = plan.Name
 			instance.ServicePlanGUID = plan.GUID
 			instance.ServiceOfferingName = plan.ServiceOfferingName
