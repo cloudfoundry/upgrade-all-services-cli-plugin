@@ -3,10 +3,10 @@ package fakecapi
 func WithServiceOffering(offering ServiceOffering, opts ...func(*FakeCAPI, ServiceOffering)) func(*FakeCAPI, ServiceBroker) {
 	return func(f *FakeCAPI, broker ServiceBroker) {
 		if offering.Name == "" {
-			offering.Name = guid()
+			offering.Name = fakeName("offering")
 		}
 		if offering.GUID == "" {
-			offering.GUID = guid()
+			offering.GUID = stableGUID(offering.Name)
 		}
 		offering.ServiceBrokerName = broker.Name
 		offering.ServiceBrokerGUID = broker.GUID

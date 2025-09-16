@@ -19,10 +19,16 @@ func WithServiceInstances(instances ...ServiceInstance) func(*FakeCAPI, ServiceP
 	return func(f *FakeCAPI, plan ServicePlan) {
 		for _, instance := range instances {
 			if instance.Name == "" {
-				instance.Name = guid()
+				instance.Name = fakeName("instance")
 			}
 			if instance.GUID == "" {
-				instance.GUID = guid()
+				instance.GUID = stableGUID(instance.Name)
+			}
+			if instance.LastOperationType == "" {
+				instance.LastOperationType = "update"
+			}
+			if instance.LastOperationState == "" {
+				instance.LastOperationState = "succeeded"
 			}
 			instance.ServicePlanName = plan.Name
 			instance.ServicePlanGUID = plan.GUID
