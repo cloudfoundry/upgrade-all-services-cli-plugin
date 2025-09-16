@@ -45,7 +45,7 @@ var _ = Describe("-dry-run", func() {
 		)
 	})
 
-	It("shows which versions would be upgraded", func() {
+	It("shows which service instances would be upgraded", func() {
 		session := cf("upgrade-all-services", brokerName, "-dry-run")
 		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 		Expect(session.Out).To(Say(strings.TrimSpace(`
