@@ -191,7 +191,7 @@ var _ = Describe("Upgrade", func() {
 					ParallelUpgrades: 5,
 					Action:           config.CheckUpToDateAction,
 				})
-				Expect(err).To(MatchError("found 3 instances which are not up-to-date"))
+				Expect(err).To(MatchError("discovered service instances associated with deactivated plans or with an upgrade available"))
 			})
 
 			By("getting the service plans")
@@ -206,7 +206,7 @@ var _ = Describe("Upgrade", func() {
 			Expect(fakeCFClient.UpgradeServiceInstanceCallCount()).Should(Equal(0))
 
 			By("printing the GUIDs")
-			Expect(result).To(ContainSubstring(fmt.Sprintf("discovering service instances for broker: %s", fakeBrokerName)))
+			Expect(result).To(ContainSubstring(fmt.Sprintf("Discovering service instances for broker: %s", fakeBrokerName)))
 			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, notUpToDateInstance1.GUID)))
 			Expect(result).To(ContainSubstring(fmt.Sprintf(`Service Instance GUID: "%s"`, fakeInstance2.GUID)))
 		})
@@ -275,20 +275,27 @@ var _ = Describe("Upgrade", func() {
 					fakeServiceInstances = []ccapi.ServiceInstance{instanceWithDeactivatedPlan, fakeInstance2, notUpToDateInstance}
 					fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 
-					err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-						BrokerName:       fakeBrokerName,
-						ParallelUpgrades: 1,
-						Action:           config.CheckUpToDateAction,
+					result := captureStdout(func() {
+						l := logger.New(100 * time.Millisecond)
+						defer l.Cleanup()
+						err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+							BrokerName:       fakeBrokerName,
+							ParallelUpgrades: 1,
+							Action:           config.CheckUpToDateAction,
+						})
+
+						Expect(err).To(MatchError(ContainSubstring("discovered service instances associated with deactivated plans or with an upgrade available")))
 					})
-					Expect(err).To(MatchError(ContainSubstring("found 1 instances which are not up-to-date")))
-					Expect(err).To(MatchError(ContainSubstring("discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services")))
+
+					Expect(result).To(ContainSubstring(`Total number of service instances: 3`))
+					Expect(result).To(ContainSubstring(`Number of service instances associated with deactivated plans: 1`))
+					Expect(result).To(ContainSubstring(`Number of service instances with an upgrade available: 1`))
 				})
 			})
 		})
 	})
 
 	When("running with --check-version-less-than-min-required", func() {
-
 		BeforeEach(func() {
 			plan := ccapi.ServicePlan{GUID: "fake-plan-1-guid"}
 			fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{plan}, nil)
@@ -315,7 +322,7 @@ var _ = Describe("Upgrade", func() {
 			result := captureStdout(func() {
 				l := logger.New(100 * time.Millisecond)
 				defer l.Cleanup()
-				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
 					BrokerName:       fakeBrokerName,
 					ParallelUpgrades: 5,
 					Action:           config.MinVersionCheckAction,
@@ -359,7 +366,7 @@ var _ = Describe("Upgrade", func() {
 			result := captureStdout(func() {
 				l := logger.New(100 * time.Millisecond)
 				defer l.Cleanup()
-				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+				err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
 					BrokerName:       fakeBrokerName,
 					ParallelUpgrades: 5,
 					Action:           config.MinVersionCheckAction,
@@ -422,22 +429,21 @@ var _ = Describe("Upgrade", func() {
 				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
 			})
 
-			It("returns an error", func() {
+			It("returns an error and logs the instances", func() {
+				result := captureStdout(func() {
+					l := logger.New(100 * time.Millisecond)
+					defer l.Cleanup()
 
-				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-					BrokerName:       fakeBrokerName,
-					ParallelUpgrades: 5,
-					Action:           config.CheckDeactivatedPlansAction,
+					err := upgrader.Upgrade(fakeCFClient, l, upgrader.UpgradeConfig{
+						BrokerName:       fakeBrokerName,
+						ParallelUpgrades: 5,
+						Action:           config.CheckDeactivatedPlansAction,
+					})
+
+					Expect(err).To(MatchError("discovered deactivated plans associated with instances"))
 				})
 
-				Expect(err).To(
-					MatchError(
-						"discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services",
-					),
-				)
-
-				Expect(fakeLog.DeactivatedPlanCallCount()).To(Equal(1))
-				Expect(fakeLog.DeactivatedPlanArgsForCall(0)).To(Equal(notUpToDateInstance1))
+				Expect(result).To(ContainSubstring(`Service Instance GUID: "fake-instance-guid-1"`))
 			})
 		})
 
@@ -487,6 +493,16 @@ var _ = Describe("Upgrade", func() {
 				}
 				fakeServiceInstances = []ccapi.ServiceInstance{notUpToDateInstance1, fakeInstance2}
 				fakeCFClient.GetServiceInstancesForServicePlansReturns(fakeServiceInstances, nil)
+			})
+
+			It("succeeds", func() {
+				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 5,
+					Action:           config.CheckDeactivatedPlansAction,
+				})
+
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})

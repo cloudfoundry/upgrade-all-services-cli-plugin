@@ -7,10 +7,10 @@ import (
 	"upgrade-all-services-cli-plugin/internal/slicex"
 	"upgrade-all-services-cli-plugin/internal/versionchecker"
 
-	"code.cloudfoundry.org/jsonry"
 	"github.com/hashicorp/go-version"
 )
 
+// performMinimumVersionRequiredCheck lists service instances whose version is lower than the specified version
 func performMinimumVersionRequiredCheck(api CFClient, cfg UpgradeConfig) error {
 	serviceInstances, err := getAllServiceInstances(api, cfg.BrokerName)
 	if err != nil {
@@ -40,27 +40,12 @@ func outputMinimumVersionText(filteredInstances []ccapi.ServiceInstance, totalSe
 
 	fmt.Printf("Number of service instances with a version lower than %q: %d\n", minVersion, len(filteredInstances))
 	fmt.Println()
-	for _, instance := range filteredInstances {
-		fmt.Printf("  Service Instance Name: %q\n", instance.Name)
-		fmt.Printf("  Service Instance GUID: %q\n", instance.GUID)
-		fmt.Printf("  Service Instance Version: %q\n", instance.MaintenanceInfoVersion)
-		fmt.Printf("  Service Plan Name: %q\n", instance.ServicePlanName)
-		fmt.Printf("  Service Plan GUID: %q\n", instance.ServicePlanGUID)
-		fmt.Printf("  Service Plan Version: %q\n", instance.ServicePlanMaintenanceInfoVersion)
-		fmt.Printf("  Service Offering Name: %q\n", instance.ServiceOfferingName)
-		fmt.Printf("  Service Offering GUID: %q\n", instance.ServiceOfferingGUID)
-		fmt.Printf("  Space Name: %q\n", instance.SpaceName)
-		fmt.Printf("  Space GUID: %q\n", instance.SpaceGUID)
-		fmt.Printf("  Organization Name: %q\n", instance.OrganizationName)
-		fmt.Printf("  Organization GUID: %q\n", instance.OrganizationGUID)
-		fmt.Println()
-	}
-
+	logServiceInstances(filteredInstances)
 	return fmt.Errorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
 }
 
 func outputMinimumVersionJSON(filteredInstances []ccapi.ServiceInstance) error {
-	lines := slicex.Map(filteredInstances, newMinVersionRequiredLineFromServiceInstance)
+	lines := slicex.Map(filteredInstances, newJSONOutputServiceInstance)
 
 	output, err := json.MarshalIndent(lines, "", "  ")
 	if err != nil {
@@ -92,38 +77,4 @@ func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.Serv
 		}
 	}
 	return filteredInstances, nil
-}
-
-func newMinVersionRequiredLineFromServiceInstance(instance ccapi.ServiceInstance) minVersionRequiredLine {
-	return minVersionRequiredLine{
-		Name:         instance.Name,
-		GUID:         instance.GUID,
-		Version:      instance.MaintenanceInfoVersion,
-		SpaceName:    instance.SpaceName,
-		SpaceGUID:    instance.SpaceGUID,
-		OrgName:      instance.OrganizationName,
-		OrgGUID:      instance.OrganizationGUID,
-		PlanName:     instance.ServicePlanName,
-		PlanGUID:     instance.ServicePlanGUID,
-		OfferingName: instance.ServiceOfferingName,
-		OfferingGUID: instance.ServiceOfferingGUID,
-	}
-}
-
-type minVersionRequiredLine struct {
-	Name         string `json:"name"`
-	GUID         string `json:"guid"`
-	Version      string `jsonry:"maintenance_info.version"`
-	SpaceName    string `jsonry:"space.name"`
-	SpaceGUID    string `jsonry:"space.guid"`
-	OrgName      string `jsonry:"organization.name"`
-	OrgGUID      string `jsonry:"organization.guid"`
-	PlanName     string `jsonry:"service_plan.name"`
-	PlanGUID     string `jsonry:"service_plan.guid"`
-	OfferingName string `jsonry:"service_offering.name"`
-	OfferingGUID string `jsonry:"service_offering.guid"`
-}
-
-func (m minVersionRequiredLine) MarshalJSON() ([]byte, error) {
-	return jsonry.Marshal(m)
 }

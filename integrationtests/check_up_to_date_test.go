@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 )
 
@@ -30,6 +29,7 @@ var _ = Describe("-check-up-to-date", func() {
 					fakecapi.ServicePlan{Name: "service-plan-2", Available: true, Version: "1.2.3"},
 					fakecapi.WithServiceInstances(
 						fakecapi.ServiceInstance{Name: "service-instance-3", UpgradeAvailable: true, Version: "1.2.0"},
+						fakecapi.ServiceInstance{Name: "service-instance-4", UpgradeAvailable: true, Version: "1.2.2", LastOperationType: "create", LastOperationState: "failed"},
 					),
 				),
 			),
@@ -38,65 +38,184 @@ var _ = Describe("-check-up-to-date", func() {
 				fakecapi.WithServicePlan(
 					fakecapi.ServicePlan{Name: "service-plan-3", Available: false, Version: "1.2.3"},
 					fakecapi.WithServiceInstances(
-						fakecapi.ServiceInstance{Name: "service-instance-4", UpgradeAvailable: false, Version: "1.2.3", LastOperationType: "create"},
+						fakecapi.ServiceInstance{Name: "service-instance-5", UpgradeAvailable: false, Version: "1.2.3", LastOperationType: "create"},
 					),
 				),
 			),
 		)
 	})
 
-	It("does a dry run and checks for deactivated plans", func() {
+	It("prints deactivated plans, pending upgrades and failed creates in text format", func() {
 		session := cf("upgrade-all-services", brokerName, "-check-up-to-date")
 		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
-		Expect(session.Out).To(Say(strings.TrimSpace(`
-\S+: discovering service instances for broker: check-up-to-date-broker
-\S+: ---
-\S+: total instances: 4
-\S+: upgradable instances: 2
-\S+: ---
-\S+: starting upgrade...
-\S+: upgrade of instance: "service-instance-2" guid: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f" failed after 0s: dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f
-\S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c
-\S+: skipping instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af0" Deactivated Plan: "service-plan-3" Offering: "service-offering-2" Offering guid: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea" Upgrade Available: false Last Operation Type: "create" State: "succeeded"
-\S+: upgraded 2 of 2
-\S+: ---
-\S+: skipped 1 instances
-\S+: successfully upgraded 0 instances
-\S+: failed to upgrade 2 instances
-\S+: 
+		Expect(strings.TrimSpace(string(session.Out.Contents()))).To(Equal(strings.TrimSpace(`
+Discovering service instances for broker: check-up-to-date-broker
+Total number of service instances: 5
+Number of service instances associated with deactivated plans: 1
 
-\s+Service Instance Name: "service-instance-2"
-\s+Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
-\s+Service Version: "1.2.2"
-\s+Details: "dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan1"
-\s+Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Service Instance Name: "service-instance-5"
+  Service Instance GUID: "ab5b7eb3-4d38-eb33-2aec-dbf7416d1db3"
+  Service Instance Version: "1.2.3"
+  Service Plan Name: "service-plan-3"
+  Service Plan GUID: "51f29f1b-d343-6bdd-0192-deb80d4c6d9f"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-2"
+  Service Offering GUID: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 
+Number of service instances with an upgrade available: 2
 
-\s+Service Instance Name: "service-instance-3"
-\s+Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Service Version: "1.2.0"
-\s+Details: "dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan-2"
-\s+Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Service Instance Name: "service-instance-2"
+  Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
+  Service Instance Version: "1.2.2"
+  Service Plan Name: "service-plan1"
+  Service Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
+
+  Service Instance Name: "service-instance-3"
+  Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
+  Service Instance Version: "1.2.0"
+  Service Plan Name: "service-plan-2"
+  Service Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
+
+Number of service instances which failed to create: 1
+
+  Service Instance Name: "service-instance-4"
+  Service Instance GUID: "c53ccd0e-b88e-0d93-712d-609588651af0"
+  Service Instance Version: "1.2.2"
+  Service Plan Name: "service-plan-2"
+  Service Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 `)))
-		Expect(session.Err).To(Say(strings.TrimSpace(`
-upgrade-all-services plugin failed: found 2 instances which are not up-to-date
-discovered deactivated plans associated with instances. Review the log to collect information and restore the deactivated plans or create user provided services
-`)))
+		Expect(string(session.Err.Contents())).To(Equal("upgrade-all-services plugin failed: discovered service instances associated with deactivated plans or with an upgrade available"))
+	})
+
+	It("prints deactivated plans, pending upgrades and failed creates in JSON", func() {
+		session := cf("upgrade-all-services", brokerName, "-check-up-to-date", "--json")
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+		Expect(strings.TrimSpace(string(session.Out.Contents()))).To(MatchJSON(`
+{
+  "plan_deactivated": [
+    {
+      "guid": "ab5b7eb3-4d38-eb33-2aec-dbf7416d1db3",
+      "maintenance_info": {
+        "version": "1.2.3"
+      },
+      "name": "service-instance-5",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "dda79e55-6ef6-5f90-4cd7-174fb300b1ea",
+        "name": "service-offering-2"
+      },
+      "service_plan": {
+        "guid": "51f29f1b-d343-6bdd-0192-deb80d4c6d9f",
+        "name": "service-plan-3"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    }
+  ],
+  "upgrade_pending": [
+    {
+      "guid": "0ec2261c-5d50-c12e-4e8b-ca9273c6150f",
+      "maintenance_info": {
+        "version": "1.2.2"
+      },
+      "name": "service-instance-2",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "173a3f22-e23f-27f2-9b32-8efdb64d5c14",
+        "name": "service-plan1"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    },
+    {
+      "guid": "ef7fa19f-0d66-55d0-0519-f198164d358c",
+      "maintenance_info": {
+        "version": "1.2.0"
+      },
+      "name": "service-instance-3",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+        "name": "service-plan-2"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    }
+  ],
+  "create_failed": [
+    {
+      "guid": "c53ccd0e-b88e-0d93-712d-609588651af0",
+      "maintenance_info": {
+        "version": "1.2.2"
+      },
+      "name": "service-instance-4",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+        "name": "service-plan-2"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    }
+  ]
+}
+`))
 	})
 })
