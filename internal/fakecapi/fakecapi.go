@@ -163,12 +163,3 @@ func freePort() (int, error) {
 	defer listener.Close()
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
-
-func filter[A any](a []A, cb func(A) bool) (result []A) {
-	for _, v := range a {
-		if cb(v) {
-			result = append(result, v)
-		}
-	}
-	return
-}

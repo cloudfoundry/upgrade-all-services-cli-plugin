@@ -34,5 +34,6 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		ParallelUpgrades: cfg.ParallelUpgrades,
 		Action:           cfg.Action,
 		MinVersion:       cfg.MinVersion,
+		JSONOutput:       cfg.JSONOutput,
 	})
 }

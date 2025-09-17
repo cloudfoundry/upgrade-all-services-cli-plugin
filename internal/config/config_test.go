@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"fmt"
+	"strings"
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
@@ -49,7 +50,7 @@ var _ = Describe("Config", func() {
 		Entry(nil, []string{"--check-deactivated-plans", "--check-up-to-date", "--dry-run", "--min-version-required", "1.2.3"}, "--check-deactivated-plans, --check-up-to-date, --dry-run, --min-version-required"),
 	)
 
-	Describe("flags combinations with --parallel", func() {
+	Describe("flag combinations with --parallel", func() {
 		// Although combining --parallel with other actions makes no sense, we do not fail
 		When("--parallel is specified with another flag", func() {
 			BeforeEach(func() {
@@ -60,6 +61,32 @@ var _ = Describe("Config", func() {
 				Expect(cfgErr).NotTo(HaveOccurred())
 			})
 		})
+	})
+
+	Describe("flag combinations with --json", func() {
+		When("specified with --min-version-required", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "--json", "--min-version-required", "1.2.3")
+			})
+
+			It("is ok", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.JSONOutput).To(BeTrue())
+			})
+		})
+
+		for _, flags := range [][]string{{}, {"--check-up-to-date"}, {"--dry-run"}, {"--check-deactivated-plans"}} {
+			When(fmt.Sprintf("specified with flags: %q", strings.Join(flags, " ")), func() {
+				BeforeEach(func() {
+					fakeArgs = append(fakeArgs, "--json")
+					fakeArgs = append(fakeArgs, flags...)
+				})
+
+				It("fails", func() {
+					Expect(cfgErr).To(MatchError(`the --json flag can only be used with the --min-version-required flag`))
+				})
+			})
+		}
 	})
 
 	Describe("checking logged in", func() {

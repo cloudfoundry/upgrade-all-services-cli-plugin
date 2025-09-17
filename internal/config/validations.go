@@ -80,3 +80,15 @@ func validateMinVersionRequired(ver string) (*version.Version, error) {
 	}
 	return v, nil
 }
+
+func validateJSONFlag(value bool, action Action) error {
+	if !value {
+		return nil
+	}
+
+	if action != MinVersionCheckAction {
+		return fmt.Errorf("the --%s flag can only be used with the --%s flag", jsonOutputFlag, minVersionRequiredFlag)
+	}
+
+	return nil
+}

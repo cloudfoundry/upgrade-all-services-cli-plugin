@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"upgrade-all-services-cli-plugin/internal/slicex"
 
 	"code.cloudfoundry.org/jsonry"
 )
@@ -87,7 +88,7 @@ func (f *FakeCAPI) listServiceInstancesHandler() func(w http.ResponseWriter, r *
 			case k == "fields[space.organization]" && v == "name,guid":
 				includeOrgs = true
 			case k == "service_plan_guids":
-				instances = filter(instances, func(p *ServiceInstance) bool { return slices.Contains(strings.Split(v, ","), p.ServicePlanGUID) })
+				instances = slicex.Filter(instances, func(p *ServiceInstance) bool { return slices.Contains(strings.Split(v, ","), p.ServicePlanGUID) })
 			default:
 				http.Error(w, fmt.Sprintf("unknown query filter %q with value %q", k, v), http.StatusBadRequest)
 				return

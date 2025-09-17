@@ -312,19 +312,22 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{{GUID: "fake-plan-1-guid"}}, nil)
 			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstance3}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:       fakeBrokerName,
-				ParallelUpgrades: 5,
-				Action:           config.MinVersionCheckAction,
-				MinVersion:       version.Must(version.NewVersion("1.5.7")),
+			result := captureStdout(func() {
+				l := logger.New(100 * time.Millisecond)
+				defer l.Cleanup()
+				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 5,
+					Action:           config.MinVersionCheckAction,
+					MinVersion:       version.Must(version.NewVersion("1.5.7")),
+				})
+				Expect(err).To(MatchError("found 2 service instances with a version less than the minimum required"))
 			})
 
-			Expect(err).To(MatchError("found 2 service instances with a version less than the minimum required"))
-			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(2))
-			_, _, dryrunErr := fakeLog.UpgradeFailedArgsForCall(0)
-			Expect(dryrunErr.Error()).To(Equal(fmt.Sprintf("dry-run prevented upgrade instance guid %s", fakeInstance1.GUID)))
-			_, _, dryrunErr = fakeLog.UpgradeFailedArgsForCall(1)
-			Expect(dryrunErr.Error()).To(Equal(fmt.Sprintf("dry-run prevented upgrade instance guid %s", fakeInstance2.GUID)))
+			Expect(result).To(ContainSubstring("Total number of service instances: 3"))
+			Expect(result).To(ContainSubstring(`Number of service instances with a version lower than "1.5.7": 2`))
+			Expect(result).To(ContainSubstring(`Service Instance GUID: "fake-instance-guid-1"`))
+			Expect(result).To(ContainSubstring(`Service Instance GUID: "fake-instance-guid-2"`))
 		})
 
 		It("should return an error because the instance has a malformed version", func() {
@@ -353,16 +356,20 @@ var _ = Describe("Upgrade", func() {
 			fakeCFClient.GetServicePlansReturns([]ccapi.ServicePlan{{GUID: "fake-plan-1-guid"}}, nil)
 			fakeCFClient.GetServiceInstancesForServicePlansReturns([]ccapi.ServiceInstance{fakeInstance1, fakeInstance2, fakeInstance3}, nil)
 
-			err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
-				BrokerName:       fakeBrokerName,
-				ParallelUpgrades: 5,
-				Action:           config.MinVersionCheckAction,
-				MinVersion:       version.Must(version.NewVersion("1.3.0")),
+			result := captureStdout(func() {
+				l := logger.New(100 * time.Millisecond)
+				defer l.Cleanup()
+				err := upgrader.Upgrade(fakeCFClient, fakeLog, upgrader.UpgradeConfig{
+					BrokerName:       fakeBrokerName,
+					ParallelUpgrades: 5,
+					Action:           config.MinVersionCheckAction,
+					MinVersion:       version.Must(version.NewVersion("1.3.0")),
+				})
+
+				Expect(err).NotTo(HaveOccurred())
 			})
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeLog.UpgradeFailedCallCount()).To(Equal(0))
-			Expect(fakeLog.PrintfArgsForCall(1)).To(Equal("no instances found with version less than required"))
+			Expect(result).To(ContainSubstring(`No instances found with version lower than "1.3.0"`))
 		})
 	})
 

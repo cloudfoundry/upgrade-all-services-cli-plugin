@@ -16,6 +16,7 @@ type Config struct {
 	APIEndpoint       string
 	SkipSSLValidation bool
 	HTTPLogging       bool
+	JSONOutput        bool
 	MinVersion        *version.Version
 	ParallelUpgrades  int
 }
@@ -33,6 +34,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet := flag.NewFlagSet("upgrade-all-services", flag.ContinueOnError)
 	flagSet.IntVar(&cfg.ParallelUpgrades, parallelFlag, parallelDefault, parallelDescription)
 	flagSet.BoolVar(&cfg.HTTPLogging, httpLoggingFlag, httpLoggingDefault, httpLoggingDescription)
+	flagSet.BoolVar(&cfg.JSONOutput, jsonOutputFlag, jsonOutputDefault, jsonOutputDescription)
 	flagSet.BoolVar(&dryRun, dryRunFlag, dryRunDefault, dryRunDescription)
 	flagSet.BoolVar(&checkUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
 	flagSet.StringVar(&minVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
@@ -60,6 +62,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 			cfg.MinVersion, err = validateMinVersionRequired(minVersionRequired)
 			return
 		},
+		func() error { return validateJSONFlag(cfg.JSONOutput, cfg.Action) },
 	} {
 		if err := s(); err != nil {
 			return Config{}, err

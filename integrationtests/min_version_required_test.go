@@ -45,130 +45,207 @@ var _ = Describe("-min-version-required", func() {
 		)
 	})
 
-	It("detects versions below the minimum", func() {
-		session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.3")
-		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
-		Expect(session.Out).To(Say(strings.TrimSpace(`
-\S+: discovering service instances for broker: min-ver-broker
-\S+: ---
-\S+: total instances: 4
-\S+: upgradable instances: 3
-\S+: ---
-\S+: starting upgrade...
-\S+: upgrade of instance: "service-instance-2" guid: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f" failed after 0s: dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f
-\S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c
-\S+: upgrade of instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af0" failed after 0s: dry-run prevented upgrade instance guid c53ccd0e-b88e-0d93-712d-609588651af0
-\S+: upgraded 3 of 3
-\S+: ---
-\S+: skipped 0 instances
-\S+: successfully upgraded 0 instances
-\S+: failed to upgrade 3 instances
-\S+:\s
+	Context("text output", func() {
+		It("detects versions below the minimum", func() {
+			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.3")
 
-\s+Service Instance Name: "service-instance-2"
-\s+Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
-\s+Service Version: "1.2.2"
-\s+Details: "dry-run prevented upgrade instance guid 0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan1"
-\s+Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+			By("exiting with an error code")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
+			Expect(strings.TrimSpace(string(session.Out.Contents()))).To(Equal(strings.TrimSpace(`
+Discovering service instances for broker: min-ver-broker
+Total number of service instances: 4
+Number of service instances with a version lower than "1.2.3": 3
 
+  Service Instance Name: "service-instance-2"
+  Service Instance GUID: "0ec2261c-5d50-c12e-4e8b-ca9273c6150f"
+  Service Instance Version: "1.2.2"
+  Service Plan Name: "service-plan1"
+  Service Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 
-\s+Service Instance Name: "service-instance-3"
-\s+Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Service Version: "1.2.0"
-\s+Details: "dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan-2"
-\s+Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Service Instance Name: "service-instance-3"
+  Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
+  Service Instance Version: "1.2.0"
+  Service Plan Name: "service-plan-2"
+  Service Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 
-
-\s+Service Instance Name: "service-instance-4"
-\s+Service Instance GUID: "c53ccd0e-b88e-0d93-712d-609588651af0"
-\s+Service Version: "1.2.1"
-\s+Details: "dry-run prevented upgrade instance guid c53ccd0e-b88e-0d93-712d-609588651af0"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan-3"
-\s+Plan GUID: "51f29f1b-d343-6bdd-0192-deb80d4c6d9f"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-2"
-\s+Service Offering GUID: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea"
+  Service Instance Name: "service-instance-4"
+  Service Instance GUID: "c53ccd0e-b88e-0d93-712d-609588651af0"
+  Service Instance Version: "1.2.1"
+  Service Plan Name: "service-plan-3"
+  Service Plan GUID: "51f29f1b-d343-6bdd-0192-deb80d4c6d9f"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-2"
+  Service Offering GUID: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 `)))
-		Expect(session.Err).To(Say(`upgrade-all-services plugin failed: found 3 service instances with a version less than the minimum required`))
+			Expect(session.Err).To(Say(`upgrade-all-services plugin failed: found 3 service instances with a version less than the minimum required`))
+		})
+
+		It("has a exit code of zero when all instances are at or above the minimum", func() {
+			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.0")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Expect(strings.TrimSpace(string(session.Out.Contents()))).To(Equal(strings.TrimSpace(`
+Discovering service instances for broker: min-ver-broker
+Total number of service instances: 4
+No instances found with version lower than "1.2.0"
+`)))
+		})
 	})
 
-	It("ignores versions at or above the minimum", func() {
-		session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.2")
-		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
-		Expect(session.Out).To(Say(strings.TrimSpace(`
-\S+: discovering service instances for broker: min-ver-broker
-\S+: ---
-\S+: total instances: 4
-\S+: upgradable instances: 2
-\S+: ---
-\S+: starting upgrade...
-\S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c
-\S+: upgrade of instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af0" failed after 0s: dry-run prevented upgrade instance guid c53ccd0e-b88e-0d93-712d-609588651af0
-\S+: upgraded 2 of 2
-\S+: ---
-\S+: skipped 0 instances
-\S+: successfully upgraded 0 instances
-\S+: failed to upgrade 2 instances
-\S+: 
+	Context("JSON output", func() {
+		It("detects versions below the minimum", func() {
+			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.3", "--json")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Expect(session.Out.Contents()).To(MatchJSON(`
+[
+    {
+      "guid": "0ec2261c-5d50-c12e-4e8b-ca9273c6150f",
+      "maintenance_info": {
+        "version": "1.2.2"
+      },
+      "name": "service-instance-2",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "173a3f22-e23f-27f2-9b32-8efdb64d5c14",
+        "name": "service-plan1"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    },
+    {
+      "guid": "ef7fa19f-0d66-55d0-0519-f198164d358c",
+      "maintenance_info": {
+        "version": "1.2.0"
+      },
+      "name": "service-instance-3",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+        "name": "service-plan-2"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    },
+    {
+      "guid": "c53ccd0e-b88e-0d93-712d-609588651af0",
+      "maintenance_info": {
+        "version": "1.2.1"
+      },
+      "name": "service-instance-4",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "dda79e55-6ef6-5f90-4cd7-174fb300b1ea",
+        "name": "service-offering-2"
+      },
+      "service_plan": {
+        "guid": "51f29f1b-d343-6bdd-0192-deb80d4c6d9f",
+        "name": "service-plan-3"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    }
+  ]
+`))
+		})
 
-\s+Service Instance Name: "service-instance-3"
-\s+Service Instance GUID: "ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Service Version: "1.2.0"
-\s+Details: "dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan-2"
-\s+Plan GUID: "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-1"
-\s+Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+		It("ignores versions at or above the minimum", func() {
+			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.2", "--json")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Expect(session.Out.Contents()).To(MatchJSON(`
+  [
+    {
+      "guid": "ef7fa19f-0d66-55d0-0519-f198164d358c",
+      "maintenance_info": {
+        "version": "1.2.0"
+      },
+      "name": "service-instance-3",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+        "name": "service-offering-1"
+      },
+      "service_plan": {
+        "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+        "name": "service-plan-2"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    },
+    {
+      "guid": "c53ccd0e-b88e-0d93-712d-609588651af0",
+      "maintenance_info": {
+        "version": "1.2.1"
+      },
+      "name": "service-instance-4",
+      "organization": {
+        "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+        "name": "fake-org"
+      },
+      "service_offering": {
+        "guid": "dda79e55-6ef6-5f90-4cd7-174fb300b1ea",
+        "name": "service-offering-2"
+      },
+      "service_plan": {
+        "guid": "51f29f1b-d343-6bdd-0192-deb80d4c6d9f",
+        "name": "service-plan-3"
+      },
+      "space": {
+        "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+        "name": "fake-space"
+      }
+    }
+  ]`))
+		})
 
-
-\s+Service Instance Name: "service-instance-4"
-\s+Service Instance GUID: "c53ccd0e-b88e-0d93-712d-609588651af0"
-\s+Service Version: "1.2.1"
-\s+Details: "dry-run prevented upgrade instance guid c53ccd0e-b88e-0d93-712d-609588651af0"
-\s+Org Name: "fake-org"
-\s+Org GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
-\s+Space Name: "fake-space"
-\s+Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
-\s+Plan Name: "service-plan-3"
-\s+Plan GUID: "51f29f1b-d343-6bdd-0192-deb80d4c6d9f"
-\s+Plan Version: "1.2.3"
-\s+Service Offering Name: "service-offering-2"
-\s+Service Offering GUID: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea"
-`)))
-		Expect(session.Err).To(Say(`upgrade-all-services plugin failed: found 2 service instances with a version less than the minimum required`))
-	})
-
-	It("succeeds when all instances are at or above the minimum", func() {
-		session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.0")
-		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
-		Expect(session.Out).To(Say(strings.TrimSpace(`
-\S+: discovering service instances for broker: min-ver-broker
-\S+: no instances found with version less than required
-`)))
+		It("has a exit code of zero when all instances are at or above the minimum", func() {
+			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.0", "--json")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Expect(string(session.Out.Contents())).To(MatchJSON(`[]`))
+		})
 	})
 })
