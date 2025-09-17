@@ -28,4 +28,8 @@ const (
 	checkDeactivatedPlansDefault     = false
 	checkDeactivatedPlansFlag        = "check-deactivated-plans"
 	checkDeactivatedPlansDescription = "checks whether any of the plans have been deactivated. If any deactivated plans are found, the command will fail"
+
+	jsonOutputDefault     = false
+	jsonOutputFlag        = "json"
+	jsonOutputDescription = "output as JSON"
 )

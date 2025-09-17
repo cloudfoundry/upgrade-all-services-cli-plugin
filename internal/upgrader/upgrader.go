@@ -6,7 +6,6 @@ import (
 	"time"
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/config"
-	"upgrade-all-services-cli-plugin/internal/versionchecker"
 	"upgrade-all-services-cli-plugin/internal/workers"
 
 	"github.com/hashicorp/go-version"
@@ -38,20 +37,17 @@ type UpgradeConfig struct {
 	ParallelUpgrades int
 	Action           config.Action
 	MinVersion       *version.Version
+	JSONOutput       bool
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
-	servicePlans, err := api.GetServicePlans(cfg.BrokerName)
-	if err != nil {
-		return err
-	}
-
-	if len(servicePlans) == 0 {
-		return fmt.Errorf("no service plans available for broker: %s", cfg.BrokerName)
+	switch cfg.Action {
+	case config.MinVersionCheckAction:
+		return performMinimumVersionRequiredCheck(api, cfg)
 	}
 
 	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
-	serviceInstances, err := api.GetServiceInstancesForServicePlans(servicePlans)
+	serviceInstances, err := getAllServiceInstances(api, cfg.BrokerName)
 	if err != nil {
 		return err
 	}
@@ -75,21 +71,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		}
 
 		return nil
-	case cfg.Action == config.MinVersionCheckAction:
-		filteredInstances, err := filterInstancesVersionLessThanMinimumVersionRequired(serviceInstances, cfg.MinVersion)
-		if err != nil {
-			return err
-		}
-
-		if len(filteredInstances) == 0 {
-			log.Printf("no instances found with version less than required")
-			return nil
-		}
-
-		log.InitialTotals(len(serviceInstances), len(filteredInstances))
-		defer log.FinalTotals()
-		performDryRun(filteredInstances, log)
-		return fmt.Errorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
 	case len(upgradableInstances) == 0:
 		log.Printf("no instances available to upgrade")
 		return nil
@@ -103,26 +84,6 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		defer log.FinalTotals()
 		return performUpgrade(api, upgradableInstances, cfg.ParallelUpgrades, log)
 	}
-}
-
-func filterInstancesVersionLessThanMinimumVersionRequired(instances []ccapi.ServiceInstance, minVersion *version.Version) ([]ccapi.ServiceInstance, error) {
-	checker, err := versionchecker.New(minVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	var filteredInstances []ccapi.ServiceInstance
-	for _, instance := range instances {
-		is, err := checker.IsInstanceVersionLessThanMinimumRequired(instance.MaintenanceInfoVersion)
-		if err != nil {
-			return nil, err
-		}
-
-		if is {
-			filteredInstances = append(filteredInstances, instance)
-		}
-	}
-	return filteredInstances, nil
 }
 
 func checkDeactivatedPlans(log Logger, instances []ccapi.ServiceInstance) error {
@@ -206,4 +167,17 @@ func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.Se
 	}
 
 	return instancesWithPendingUpgrade
+}
+
+func getAllServiceInstances(api CFClient, brokerName string) ([]ccapi.ServiceInstance, error) {
+	servicePlans, err := api.GetServicePlans(brokerName)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(servicePlans) == 0 {
+		return nil, fmt.Errorf("no service plans available for broker: %s", brokerName)
+	}
+
+	return api.GetServiceInstancesForServicePlans(servicePlans)
 }

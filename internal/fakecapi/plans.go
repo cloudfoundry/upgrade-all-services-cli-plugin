@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"upgrade-all-services-cli-plugin/internal/slicex"
 
 	"code.cloudfoundry.org/jsonry"
 )
@@ -50,7 +51,7 @@ func (f *FakeCAPI) listServicePlansHandler() func(w http.ResponseWriter, r *http
 			case k == "include" && v == "service_offering":
 				includeServiceOffering = true
 			case k == "service_broker_names":
-				plans = filter(plans, func(p ServicePlan) bool {
+				plans = slicex.Filter(plans, func(p ServicePlan) bool {
 					return slices.Contains(strings.Split(v, ","), f.offerings[p.ServiceOfferingGUID].ServiceBrokerName)
 				})
 			default:
