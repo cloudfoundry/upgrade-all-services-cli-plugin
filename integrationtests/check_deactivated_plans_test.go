@@ -61,8 +61,8 @@ var _ = Describe("-check-deactivated-plans", func() {
 		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 		Expect(session.Out).To(Say(strings.TrimSpace(`
 \S+: discovering service instances for broker: check-deactivated-plans-broker
-\S+: skipping instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358ce662614b25499cd4ebf411f5e6ea55ae" Deactivated Plan: "service-plan-2" Offering: "service-offering-1" Offering guid: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa2e7736a44b2e4ea39df28a5c1e96c760" Upgrade Available: true Last Operation Type: "create" State: "succeeded"
-\S+: skipping instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af020db5207350e8f031a12585cef7accd9" Deactivated Plan: "service-plan-3" Offering: "service-offering-2" Offering guid: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea4412b95dbebf58dda02ee194c7c4598b" Upgrade Available: false Last Operation Type: "update" State: "failed"
+\S+: skipping instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" Deactivated Plan: "service-plan-2" Offering: "service-offering-1" Offering guid: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa" Upgrade Available: true Last Operation Type: "create" State: "succeeded"
+\S+: skipping instance: "service-instance-4" guid: "c53ccd0e-b88e-0d93-712d-609588651af0" Deactivated Plan: "service-plan-3" Offering: "service-offering-2" Offering guid: "dda79e55-6ef6-5f90-4cd7-174fb300b1ea" Upgrade Available: false Last Operation Type: "update" State: "failed"
 `)))
 
 		Expect(string(session.Out.Contents())).NotTo(SatisfyAny(
