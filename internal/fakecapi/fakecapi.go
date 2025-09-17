@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -37,26 +38,41 @@ func New() *FakeCAPI {
 }
 
 type FakeCAPI struct {
-	URL       string
-	loginURL  string
-	stopLogin func()
-	stopCAPI  func()
-	brokers   map[string]ServiceBroker
-	plans     map[string]ServicePlan
-	offerings map[string]ServiceOffering
-	instances map[string]ServiceInstance
+	URL           string
+	loginURL      string
+	stopLogin     func()
+	stopCAPI      func()
+	brokers       map[string]ServiceBroker
+	plans         map[string]ServicePlan
+	offerings     map[string]ServiceOffering
+	instances     map[string]*ServiceInstance
+	fakeNameCount map[string]int
+	lock          sync.Mutex
+	operations    int
+	MaxOperations int
 }
 
 func (f *FakeCAPI) Reset() {
 	f.brokers = make(map[string]ServiceBroker)
 	f.plans = make(map[string]ServicePlan)
 	f.offerings = make(map[string]ServiceOffering)
-	f.instances = make(map[string]ServiceInstance)
+	f.instances = make(map[string]*ServiceInstance)
+	f.fakeNameCount = make(map[string]int)
+	f.operations = 0
+	f.MaxOperations = 0
 }
 
 func (f *FakeCAPI) Stop() {
 	f.stopLogin()
 	f.stopCAPI()
+}
+
+// UpdateCount sums the number of updates completed
+func (f *FakeCAPI) UpdateCount() (result int) {
+	for _, v := range f.instances {
+		result += v.UpdateCount
+	}
+	return
 }
 
 func (f *FakeCAPI) capiMux() *http.ServeMux {
@@ -66,8 +82,10 @@ func (f *FakeCAPI) capiMux() *http.ServeMux {
 		w.Write([]byte(`{"api_version":"2.264.0"}`))
 	})
 
-	capi.HandleFunc("GET /v3/service_plans", f.servicePlanHandler())
-	capi.HandleFunc("GET /v3/service_instances", f.serviceInstanceHandler())
+	capi.HandleFunc("GET /v3/service_plans", f.listServicePlansHandler())
+	capi.HandleFunc("GET /v3/service_instances", f.listServiceInstancesHandler())
+	capi.HandleFunc("GET /v3/service_instances/{guid}", f.getServiceInstanceHandler())
+	capi.HandleFunc("PATCH /v3/service_instances/{guid}", f.updateServiceInstanceHandler())
 
 	capi.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
@@ -79,6 +97,21 @@ func (f *FakeCAPI) capiMux() *http.ServeMux {
 	})
 
 	return capi
+}
+
+func (f *FakeCAPI) startOperation() {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.operations++
+	if f.operations > f.MaxOperations {
+		f.MaxOperations = f.operations
+	}
+}
+
+func (f *FakeCAPI) stopOperation() {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	f.operations--
 }
 
 func loginMux() *http.ServeMux {

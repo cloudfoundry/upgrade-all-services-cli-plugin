@@ -2,7 +2,7 @@ package fakecapi
 
 func (f *FakeCAPI) AddBroker(broker ServiceBroker, opts ...func(*FakeCAPI, ServiceBroker)) {
 	if broker.Name == "" {
-		broker.Name = fakeName("broker")
+		broker.Name = f.fakeName("broker")
 	}
 	if broker.GUID == "" {
 		broker.GUID = stableGUID(broker.Name)
