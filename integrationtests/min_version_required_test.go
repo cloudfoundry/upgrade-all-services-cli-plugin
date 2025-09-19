@@ -7,7 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 )
 
@@ -95,7 +94,7 @@ Number of service instances with a version lower than "1.2.3": 3
   Organization Name: "fake-org"
   Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
 `)))
-			Expect(session.Err).To(Say(`upgrade-all-services plugin failed: found 3 service instances with a version less than the minimum required`))
+			Expect(string(session.Err.Contents())).To(Equal(`upgrade-all-services plugin failed: found 3 service instances with a version less than the minimum required`))
 		})
 
 		It("has a exit code of zero when all instances are at or above the minimum", func() {
