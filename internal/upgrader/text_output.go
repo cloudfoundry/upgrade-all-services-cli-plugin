@@ -21,5 +21,4 @@ func logServiceInstances(instances []ccapi.ServiceInstance) {
 		fmt.Printf("  Organization GUID: %q\n", instance.OrganizationGUID)
 		fmt.Println()
 	}
-
 }

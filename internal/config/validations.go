@@ -86,9 +86,10 @@ func validateJSONFlag(value bool, action Action) error {
 		return nil
 	}
 
-	if action != MinVersionCheckAction && action != CheckDeactivatedPlansAction && action != CheckUpToDateAction {
-		return fmt.Errorf("the --%s flag can only be used with the --%s, --%s, or --%s flags", jsonOutputFlag, minVersionRequiredFlag, checkDeactivatedPlansFlag, checkUpToDateFlag)
+	switch action {
+	case MinVersionCheckAction, CheckDeactivatedPlansAction, CheckUpToDateAction, DryRunAction:
+		return nil
+	default:
+		return fmt.Errorf("the --%s flag can only be used with the --%s, --%s, --%s, or --%s flags", jsonOutputFlag, minVersionRequiredFlag, checkDeactivatedPlansFlag, checkUpToDateFlag, dryRunFlag)
 	}
-
-	return nil
 }
