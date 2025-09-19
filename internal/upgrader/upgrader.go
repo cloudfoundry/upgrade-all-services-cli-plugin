@@ -1,11 +1,13 @@
 package upgrader
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/config"
+	"upgrade-all-services-cli-plugin/internal/slicex"
 	"upgrade-all-services-cli-plugin/internal/workers"
 
 	"github.com/hashicorp/go-version"
@@ -47,37 +49,36 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 		return performDeactivatedPlansCheck(api, cfg)
 	case config.CheckUpToDateAction:
 		return performUpToDateCheck(api, cfg)
-	default:
-		return performUpgradeOrDryRun(api, log, cfg)
+	default: // continue function
 	}
-}
 
-func performUpgradeOrDryRun(api CFClient, log Logger, cfg UpgradeConfig) error {
-	log.Printf("discovering service instances for broker: %s", cfg.BrokerName)
-	serviceInstances, err := getAllServiceInstances(api, cfg.BrokerName)
+	instances, err := getGroupedServiceInstances(api, cfg.BrokerName)
 	if err != nil {
 		return err
 	}
 
-	upgradableInstances := discoverInstancesWithPendingUpgrade(log, serviceInstances)
-
 	switch {
-	case len(upgradableInstances) == 0:
-		log.Printf("no instances available to upgrade")
-		return nil
-	case cfg.Action == config.DryRunAction:
-		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
-		defer log.FinalTotals()
-		performDryRun(upgradableInstances, log)
-		return nil
+	case cfg.Action == config.DryRunAction && cfg.JSONOutput:
+		return outputDryRunJSON(instances.upgradeable, instances.createFailed)
+	case cfg.Action == config.DryRunAction && !cfg.JSONOutput:
+		return outputDryRunText(instances, log, cfg.BrokerName)
 	default:
-		log.InitialTotals(len(serviceInstances), len(upgradableInstances))
-		defer log.FinalTotals()
-		return performUpgrade(api, upgradableInstances, cfg.ParallelUpgrades, log)
+		return performUpgrade(api, instances, cfg.ParallelUpgrades, cfg.BrokerName, log)
 	}
 }
 
-func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, parallelUpgrades int, log Logger) error {
+func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpgrades int, brokerName string, log Logger) error {
+	log.Printf("discovering service instances for broker: %s", brokerName)
+	log.InitialTotals(len(instances.all), len(instances.upgradeable))
+	defer log.FinalTotals()
+	for _, instance := range instances.createFailed {
+		log.SkippingInstance(instance)
+	}
+	if len(instances.upgradeable) == 0 {
+		log.Printf("no instances available to upgrade")
+		return nil
+	}
+
 	type upgradeTask struct {
 		UpgradeableIndex       int
 		ServiceInstanceName    string
@@ -87,7 +88,7 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 
 	upgradeQueue := make(chan upgradeTask)
 	go func() {
-		for i, instance := range upgradableInstances {
+		for i, instance := range instances.upgradeable {
 			upgradeQueue <- upgradeTask{
 				UpgradeableIndex:       i,
 				ServiceInstanceName:    instance.Name,
@@ -101,13 +102,13 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
 			start := time.Now()
-			log.UpgradeStarting(upgradableInstances[instance.UpgradeableIndex])
+			log.UpgradeStarting(instances.upgradeable[instance.UpgradeableIndex])
 			err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
 			switch err {
 			case nil:
-				log.UpgradeSucceeded(upgradableInstances[instance.UpgradeableIndex], time.Since(start))
+				log.UpgradeSucceeded(instances.upgradeable[instance.UpgradeableIndex], time.Since(start))
 			default:
-				log.UpgradeFailed(upgradableInstances[instance.UpgradeableIndex], time.Since(start), err)
+				log.UpgradeFailed(instances.upgradeable[instance.UpgradeableIndex], time.Since(start), err)
 			}
 		}
 	})
@@ -118,29 +119,49 @@ func performUpgrade(api CFClient, upgradableInstances []ccapi.ServiceInstance, p
 	return nil
 }
 
-func performDryRun(serviceInstances []ccapi.ServiceInstance, log Logger) {
-	for _, i := range serviceInstances {
+func outputDryRunText(instances groupedServiceInstances, log Logger, brokerName string) error {
+	log.Printf("discovering service instances for broker: %s", brokerName)
+	for _, instance := range instances.createFailed {
+		log.SkippingInstance(instance)
+	}
+
+	if len(instances.upgradeable) == 0 {
+		log.Printf("no instances available to upgrade")
+		return nil
+	}
+
+	log.InitialTotals(len(instances.all), len(instances.upgradeable))
+	defer log.FinalTotals()
+
+	for _, i := range instances.upgradeable {
 		dryRunErr := fmt.Errorf("dry-run prevented upgrade instance guid %s", i.GUID)
 		log.UpgradeFailed(i, time.Duration(0), dryRunErr)
 	}
+
+	return nil
 }
 
-func discoverInstancesWithPendingUpgrade(log Logger, serviceInstances []ccapi.ServiceInstance) []ccapi.ServiceInstance {
-	var instancesWithPendingUpgrade []ccapi.ServiceInstance
-	for _, i := range serviceInstances {
-		if !i.UpgradeAvailable {
-			continue
-		}
-
-		if ccapi.HasInstanceCreateFailedStatus(i) {
-			log.SkippingInstance(i)
-			continue
-		}
-
-		instancesWithPendingUpgrade = append(instancesWithPendingUpgrade, i)
+// outputDryRunJSON produces a JSON version of the dry run output. Unlike --check-up-to-date we do not
+// output deactivated plans. This is to match existing behavior.
+func outputDryRunJSON(upgradableInstances, createFailedInstances []ccapi.ServiceInstance) error {
+	type formatter struct {
+		UpgradePending []jsonOutputServiceInstance `json:"upgrade"`
+		CreateFailed   []jsonOutputServiceInstance `json:"skip"`
 	}
 
-	return instancesWithPendingUpgrade
+	data := formatter{
+		UpgradePending: slicex.Map(upgradableInstances, newJSONOutputServiceInstance),
+		CreateFailed:   slicex.Map(createFailedInstances, newJSONOutputServiceInstance),
+	}
+
+	output, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(output))
+
+	return nil
 }
 
 func getAllServiceInstances(api CFClient, brokerName string) ([]ccapi.ServiceInstance, error) {
@@ -154,4 +175,31 @@ func getAllServiceInstances(api CFClient, brokerName string) ([]ccapi.ServiceIns
 	}
 
 	return api.GetServiceInstancesForServicePlans(servicePlans)
+}
+
+type groupedServiceInstances struct {
+	all, upgradeable, deactivatedPlan, createFailed []ccapi.ServiceInstance
+}
+
+// getGroupedServiceInstances will fetch all the service instances for a broker and group them into the following categories:
+// - all: all service instances
+// - deactivatedPlan - all service instances associated with a deactivated plan
+// - createFailed - all service instances for which the UpgradeAvailable flag is set, but the instance failed to create
+// - upgradeable - all service instances for which the UpgradeAvailable flag is set, bit the instance has been created successfully
+func getGroupedServiceInstances(api CFClient, brokerName string) (groupedServiceInstances, error) {
+	instances, err := getAllServiceInstances(api, brokerName)
+	if err != nil {
+		return groupedServiceInstances{}, err
+	}
+
+	deactivatedPlan := slicex.Filter(instances, func(instance ccapi.ServiceInstance) bool { return instance.ServicePlanDeactivated })
+	upgradeAvailable := slicex.Filter(instances, func(instance ccapi.ServiceInstance) bool { return instance.UpgradeAvailable })
+	createFailed, upgradeable := slicex.Partition(upgradeAvailable, ccapi.HasInstanceCreateFailedStatus)
+
+	return groupedServiceInstances{
+		all:             instances,
+		deactivatedPlan: deactivatedPlan,
+		createFailed:    createFailed,
+		upgradeable:     upgradeable,
+	}, nil
 }
