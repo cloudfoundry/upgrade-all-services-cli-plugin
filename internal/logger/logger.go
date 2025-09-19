@@ -117,37 +117,20 @@ func logRowFormatTotals(l *Logger) {
 		l.printf("failed to upgrade %d instances", len(l.failures))
 		l.printf("")
 		for _, failure := range l.failures {
-			fmt.Printf(`
-		Service Instance Name: %q
-		Service Instance GUID: %q
-		Service Version: %q
-		Details: %q
-		Org Name: %q
-		Org GUID: %q
-		Space Name: %q
-		Space GUID: %q
-		Plan Name: %q
-		Plan GUID: %q
-		Plan Version: %q
-		Service Offering Name: %q
-		Service Offering GUID: %q
-
-`,
-				failure.instance.Name,
-				failure.instance.GUID,
-				failure.instance.MaintenanceInfoVersion,
-
-				failure.err.Error(),
-				failure.instance.OrganizationName,
-				failure.instance.OrganizationGUID,
-				failure.instance.SpaceName,
-				failure.instance.SpaceGUID,
-				failure.instance.ServicePlanName,
-				failure.instance.ServicePlanGUID,
-				failure.instance.ServicePlanMaintenanceInfoVersion,
-				failure.instance.ServiceOfferingName,
-				failure.instance.ServiceOfferingGUID,
-			)
+			fmt.Println()
+			fmt.Printf("  Details: %q\n", failure.err)
+			fmt.Printf("  Service Instance Name: %q\n", failure.instance.Name)
+			fmt.Printf("  Service Instance GUID: %q\n", failure.instance.GUID)
+			fmt.Printf("  Service Instance Version: %q\n", failure.instance.MaintenanceInfoVersion)
+			fmt.Printf("  Service Plan Name: %q\n", failure.instance.ServicePlanName)
+			fmt.Printf("  Service Plan GUID: %q\n", failure.instance.ServicePlanGUID)
+			fmt.Printf("  Service Plan Version: %q\n", failure.instance.ServicePlanMaintenanceInfoVersion)
+			fmt.Printf("  Service Offering Name: %q\n", failure.instance.ServiceOfferingName)
+			fmt.Printf("  Service Offering GUID: %q\n", failure.instance.ServiceOfferingGUID)
+			fmt.Printf("  Space Name: %q\n", failure.instance.SpaceName)
+			fmt.Printf("  Space GUID: %q\n", failure.instance.SpaceGUID)
+			fmt.Printf("  Organization Name: %q\n", failure.instance.OrganizationName)
+			fmt.Printf("  Organization GUID: %q\n", failure.instance.OrganizationGUID)
 		}
 	}
 }

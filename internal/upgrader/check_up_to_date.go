@@ -10,25 +10,19 @@ import (
 
 // performUpToDateCheck performs multiple checks:
 // - it lists service instances associated with deactivated plans (the same as performDeactivatedPlansCheck)
-// - it lists service instances that have an upgrade available (similar to performing a dry run)
-// - it lists service instances that failed to create
+// - it lists service instances that have an upgrade available and failed to create
+// - it lists service instances that have an upgrade available and did not fail to create (similar to performing a dry run)
 func performUpToDateCheck(api CFClient, cfg UpgradeConfig) error {
-	serviceInstances, err := getAllServiceInstances(api, cfg.BrokerName)
+	instances, err := getGroupedServiceInstances(api, cfg.BrokerName)
 	if err != nil {
 		return err
 	}
 
-	instancesWithDeactivatedPlans := slicex.Filter(serviceInstances, func(instance ccapi.ServiceInstance) bool { return instance.ServicePlanDeactivated })
-	upgradableInstances := slicex.Filter(serviceInstances, func(instance ccapi.ServiceInstance) bool {
-		return instance.UpgradeAvailable && !ccapi.HasInstanceCreateFailedStatus(instance)
-	})
-	createFailedInstances := slicex.Filter(serviceInstances, func(instance ccapi.ServiceInstance) bool { return ccapi.HasInstanceCreateFailedStatus(instance) })
-
 	switch cfg.JSONOutput {
 	case true:
-		return outputUpToDateJSON(instancesWithDeactivatedPlans, upgradableInstances, createFailedInstances)
+		return outputUpToDateJSON(instances.deactivatedPlan, instances.upgradeable, instances.createFailed)
 	default:
-		return outputUpToDateText(instancesWithDeactivatedPlans, upgradableInstances, createFailedInstances, len(serviceInstances), cfg.BrokerName)
+		return outputUpToDateText(instances.deactivatedPlan, instances.upgradeable, instances.createFailed, len(instances.all), cfg.BrokerName)
 	}
 }
 
