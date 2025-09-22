@@ -17,6 +17,8 @@ func UsageOptions() map[string]string {
 		minVersionRequiredFlag:    minVersionRequiredDescription,
 		checkUpToDateFlag:         checkUpToDateDescription,
 		checkDeactivatedPlansFlag: checkDeactivatedPlansDescription,
+		limitFlag:                 limitDescription,
+		jsonOutputFlag:            jsonOutputDescription,
 	}
 }
 

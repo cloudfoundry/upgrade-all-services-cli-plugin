@@ -38,18 +38,18 @@ func New() *FakeCAPI {
 }
 
 type FakeCAPI struct {
-	URL           string
-	loginURL      string
-	stopLogin     func()
-	stopCAPI      func()
-	brokers       map[string]ServiceBroker
-	plans         map[string]ServicePlan
-	offerings     map[string]ServiceOffering
-	instances     map[string]*ServiceInstance
-	fakeNameCount map[string]int
-	lock          sync.Mutex
-	operations    int
-	MaxOperations int
+	URL                     string
+	loginURL                string
+	stopLogin               func()
+	stopCAPI                func()
+	brokers                 map[string]ServiceBroker
+	plans                   map[string]ServicePlan
+	offerings               map[string]ServiceOffering
+	instances               map[string]*ServiceInstance
+	fakeNameCount           map[string]int
+	lock                    sync.Mutex
+	concurrentOperations    int
+	MaxConcurrentOperations int
 }
 
 func (f *FakeCAPI) Reset() {
@@ -58,8 +58,8 @@ func (f *FakeCAPI) Reset() {
 	f.offerings = make(map[string]ServiceOffering)
 	f.instances = make(map[string]*ServiceInstance)
 	f.fakeNameCount = make(map[string]int)
-	f.operations = 0
-	f.MaxOperations = 0
+	f.concurrentOperations = 0
+	f.MaxConcurrentOperations = 0
 }
 
 func (f *FakeCAPI) Stop() {
@@ -102,16 +102,16 @@ func (f *FakeCAPI) capiMux() *http.ServeMux {
 func (f *FakeCAPI) startOperation() {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.operations++
-	if f.operations > f.MaxOperations {
-		f.MaxOperations = f.operations
+	f.concurrentOperations++
+	if f.concurrentOperations > f.MaxConcurrentOperations {
+		f.MaxConcurrentOperations = f.concurrentOperations
 	}
 }
 
 func (f *FakeCAPI) stopOperation() {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	f.operations--
+	f.concurrentOperations--
 }
 
 func loginMux() *http.ServeMux {

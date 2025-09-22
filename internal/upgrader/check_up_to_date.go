@@ -13,7 +13,7 @@ import (
 // - it lists service instances that have an upgrade available and failed to create
 // - it lists service instances that have an upgrade available and did not fail to create (similar to performing a dry run)
 func performUpToDateCheck(api CFClient, cfg UpgradeConfig) error {
-	instances, err := getGroupedServiceInstances(api, cfg.BrokerName)
+	instances, err := getGroupedServiceInstances(api, cfg.BrokerName, 0)
 	if err != nil {
 		return err
 	}

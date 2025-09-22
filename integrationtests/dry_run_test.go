@@ -214,4 +214,86 @@ var _ = Describe("-dry-run", func() {
     ]
   }`))
 	})
+
+	It("accepts a limit", func() {
+		session := cf("upgrade-all-services", brokerName, "-dry-run", "-json", "-limit", "2")
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+		Expect(string(session.Out.Contents())).To(MatchJSON(`
+  {
+    "upgrade": [
+      {
+        "guid": "5cc87b43-f885-3b94-328f-8a5f953590d3",
+        "maintenance_info": {
+          "version": "1.2.2"
+        },
+        "name": "service-instance-1",
+        "organization": {
+          "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+          "name": "fake-org"
+        },
+        "service_offering": {
+          "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+          "name": "service-offering-1"
+        },
+        "service_plan": {
+          "guid": "173a3f22-e23f-27f2-9b32-8efdb64d5c14",
+          "name": "service-plan1"
+        },
+        "space": {
+          "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+          "name": "fake-space"
+        }
+      },
+      {
+        "guid": "ef7fa19f-0d66-55d0-0519-f198164d358c",
+        "maintenance_info": {
+          "version": "1.1.0"
+        },
+        "name": "service-instance-3",
+        "organization": {
+          "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+          "name": "fake-org"
+        },
+        "service_offering": {
+          "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+          "name": "service-offering-1"
+        },
+        "service_plan": {
+          "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+          "name": "service-plan-2"
+        },
+        "space": {
+          "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+          "name": "fake-space"
+        }
+      }
+    ],
+    "skip": [
+      {
+        "guid": "c53ccd0e-b88e-0d93-712d-609588651af0",
+        "maintenance_info": {
+          "version": "1.1.0"
+        },
+        "name": "service-instance-4",
+        "organization": {
+          "guid": "1a2f43b5-1594-4247-a888-e8843ebd1b03",
+          "name": "fake-org"
+        },
+        "service_offering": {
+          "guid": "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa",
+          "name": "service-offering-1"
+        },
+        "service_plan": {
+          "guid": "3ccc0ed1-1c06-036b-7bfe-f4d9dff25d02",
+          "name": "service-plan-2"
+        },
+        "space": {
+          "guid": "5f870ea3-fa54-4174-ab3f-15f2d9516e07",
+          "name": "fake-space"
+        }
+      }
+    ]
+  }`))
+	})
+
 })

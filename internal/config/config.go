@@ -9,6 +9,10 @@ import (
 )
 
 // Config is the type that contains all the configuration data required to run the plugin
+// Note that while in theory it could make sense to make some of the `int` types a `uint`,
+// in practice this is messy because the error from flags.UintVar() look like an internal
+// error rather than a user error, and you have to cast the `uint` to compare to a `len()`,
+// which just looks more complicated than it has to. So we use an `int` for pragmatic reasons.
 type Config struct {
 	Action            Action
 	BrokerName        string
@@ -19,6 +23,7 @@ type Config struct {
 	JSONOutput        bool
 	MinVersion        *version.Version
 	ParallelUpgrades  int
+	Limit             int
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -39,6 +44,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.BoolVar(&checkUpToDate, checkUpToDateFlag, checkUpToDateDefault, checkUpToDateDescription)
 	flagSet.StringVar(&minVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
 	flagSet.BoolVar(&checkDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
+	flagSet.IntVar(&cfg.Limit, limitFlag, limitDefault, limitDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
@@ -63,6 +69,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 			return
 		},
 		func() error { return validateJSONFlag(cfg.JSONOutput, cfg.Action) },
+		func() error { return validateLimit(cfg.Limit) },
 	} {
 		if err := s(); err != nil {
 			return Config{}, err

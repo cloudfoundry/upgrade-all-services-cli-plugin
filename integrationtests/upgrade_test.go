@@ -49,15 +49,22 @@ var _ = Describe("upgrade", func() {
 \S+: successfully upgraded 1000 instances
 `)))
 
-			Expect(capi.MaxOperations).To(Equal(10))
+			Expect(capi.MaxConcurrentOperations).To(Equal(10))
 			Expect(capi.UpdateCount()).To(Equal(1000))
 		})
 
-		It("obeys the specified -parallel flag", func() {
+		It("respects the specified -parallel flag", func() {
 			session := cf("upgrade-all-services", brokerName, "--parallel", "25")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 
-			Expect(capi.MaxOperations).To(Equal(25))
+			Expect(capi.MaxConcurrentOperations).To(Equal(25))
+		})
+
+		It("respects the specified -limit flag", func() {
+			session := cf("upgrade-all-services", brokerName, "--limit", "538")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+
+			Expect(capi.UpdateCount()).To(Equal(538))
 		})
 	})
 
