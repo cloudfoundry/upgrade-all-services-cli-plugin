@@ -447,4 +447,16 @@ var _ = Describe("Config", func() {
 			})
 		})
 	})
+
+	Describe("-limit", func() {
+		When("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-limit", "-1")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`limit must be 0 or greater`))
+			})
+		})
+	})
 })

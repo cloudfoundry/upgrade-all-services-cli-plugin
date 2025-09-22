@@ -39,6 +39,7 @@ type UpgradeConfig struct {
 	Action           config.Action
 	MinVersion       *version.Version
 	JSONOutput       bool
+	Limit            int
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
@@ -52,7 +53,7 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	default: // continue function
 	}
 
-	instances, err := getGroupedServiceInstances(api, cfg.BrokerName)
+	instances, err := getGroupedServiceInstances(api, cfg.BrokerName, cfg.Limit)
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ type groupedServiceInstances struct {
 // - deactivatedPlan - all service instances associated with a deactivated plan
 // - createFailed - all service instances for which the UpgradeAvailable flag is set, but the instance failed to create
 // - upgradeable - all service instances for which the UpgradeAvailable flag is set, bit the instance has been created successfully
-func getGroupedServiceInstances(api CFClient, brokerName string) (groupedServiceInstances, error) {
+func getGroupedServiceInstances(api CFClient, brokerName string, limit int) (groupedServiceInstances, error) {
 	instances, err := getAllServiceInstances(api, brokerName)
 	if err != nil {
 		return groupedServiceInstances{}, err
@@ -195,6 +196,11 @@ func getGroupedServiceInstances(api CFClient, brokerName string) (groupedService
 	deactivatedPlan := slicex.Filter(instances, func(instance ccapi.ServiceInstance) bool { return instance.ServicePlanDeactivated })
 	upgradeAvailable := slicex.Filter(instances, func(instance ccapi.ServiceInstance) bool { return instance.UpgradeAvailable })
 	createFailed, upgradeable := slicex.Partition(upgradeAvailable, ccapi.HasInstanceCreateFailedStatus)
+
+	// If we have been asked to limit the number of instances upgraded, then apply that here
+	if limit > 0 && len(upgradeable) > limit {
+		upgradeable = upgradeable[:limit]
+	}
 
 	return groupedServiceInstances{
 		all:             instances,

@@ -32,4 +32,8 @@ const (
 	jsonOutputDefault     = false
 	jsonOutputFlag        = "json"
 	jsonOutputDescription = "output as JSON"
+
+	limitDefault     = 0
+	limitFlag        = "limit"
+	limitDescription = "stop after attempting to upgrade the specified number of service instances. 0 means no limit"
 )

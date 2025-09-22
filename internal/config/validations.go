@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -92,4 +93,11 @@ func validateJSONFlag(value bool, action Action) error {
 	default:
 		return fmt.Errorf("the --%s flag can only be used with the --%s, --%s, --%s, or --%s flags", jsonOutputFlag, minVersionRequiredFlag, checkDeactivatedPlansFlag, checkUpToDateFlag, dryRunFlag)
 	}
+}
+
+func validateLimit(limit int) error {
+	if limit < 0 {
+		return errors.New("limit must be 0 or greater")
+	}
+	return nil
 }
