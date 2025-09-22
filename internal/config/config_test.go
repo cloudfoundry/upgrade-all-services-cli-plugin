@@ -64,7 +64,7 @@ var _ = Describe("Config", func() {
 	})
 
 	Describe("flag combinations with --json", func() {
-		for _, flags := range [][]string{{"--min-version-required", "1.2.3"}, {"--check-deactivated-plans"}, {"--check-up-to-date"}} {
+		for _, flags := range [][]string{{"--min-version-required", "1.2.3"}, {"--check-deactivated-plans"}, {"--check-up-to-date"}, {"--dry-run"}} {
 			When(fmt.Sprintf("specified with flags: %q", strings.Join(flags, " ")), func() {
 				BeforeEach(func() {
 					fakeArgs = append(fakeArgs, "--json")
@@ -78,18 +78,15 @@ var _ = Describe("Config", func() {
 			})
 		}
 
-		for _, flags := range [][]string{{}, {"--dry-run"}} {
-			When(fmt.Sprintf("specified with flags: %q", strings.Join(flags, " ")), func() {
-				BeforeEach(func() {
-					fakeArgs = append(fakeArgs, "--json")
-					fakeArgs = append(fakeArgs, flags...)
-				})
-
-				It("fails", func() {
-					Expect(cfgErr).To(MatchError(`the --json flag can only be used with the --min-version-required, --check-deactivated-plans, or --check-up-to-date flags`))
-				})
+		When("specified with no other flags", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "--json")
 			})
-		}
+
+			It("fails", func() {
+				Expect(cfgErr).To(MatchError(`the --json flag can only be used with the --min-version-required, --check-deactivated-plans, --check-up-to-date, or --dry-run flags`))
+			})
+		})
 	})
 
 	Describe("checking logged in", func() {
