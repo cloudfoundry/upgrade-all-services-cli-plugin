@@ -135,13 +135,13 @@ var _ = Describe("Upgrade", func() {
 		Expect(instanceSkipped.LastOperationState).To(Equal("failed"))
 
 		Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(3))
-		instance1 := fakeLog.UpgradeStartingArgsForCall(0)
+		instance1, _, _ := fakeLog.UpgradeStartingArgsForCall(0)
 		Expect(instance1.Name).To(Equal("fake-instance-name-1"))
 		Expect(instance1.GUID).To(Equal("fake-instance-guid-1"))
-		instance2 := fakeLog.UpgradeStartingArgsForCall(1)
+		instance2, _, _ := fakeLog.UpgradeStartingArgsForCall(1)
 		Expect(instance2.Name).To(Equal("fake-instance-name-2"))
 		Expect(instance2.GUID).To(Equal("fake-instance-guid-2"))
-		instance3 := fakeLog.UpgradeStartingArgsForCall(2)
+		instance3, _, _ := fakeLog.UpgradeStartingArgsForCall(2)
 		Expect(instance3.Name).To(Equal("fake-instance-destroy-failed"))
 		Expect(instance3.GUID).To(Equal("fake-instance-destroy-failed-GUID"))
 
@@ -621,13 +621,13 @@ var _ = Describe("Upgrade", func() {
 			Expect(actualUpgradable).To(Equal(3))
 
 			Expect(fakeLog.UpgradeStartingCallCount()).To(Equal(3))
-			instance1 := fakeLog.UpgradeStartingArgsForCall(0)
+			instance1, _, _ := fakeLog.UpgradeStartingArgsForCall(0)
 			Expect(instance1.Name).To(Equal("fake-instance-name-1"))
 			Expect(instance1.GUID).To(Equal("fake-instance-guid-1"))
-			instance2 := fakeLog.UpgradeStartingArgsForCall(1)
+			instance2, _, _ := fakeLog.UpgradeStartingArgsForCall(1)
 			Expect(instance2.Name).To(Equal("fake-instance-name-2"))
 			Expect(instance2.GUID).To(Equal("fake-instance-guid-2"))
-			instance3 := fakeLog.UpgradeStartingArgsForCall(2)
+			instance3, _, _ := fakeLog.UpgradeStartingArgsForCall(2)
 			Expect(instance3.Name).To(Equal("fake-instance-destroy-failed"))
 			Expect(instance3.GUID).To(Equal("fake-instance-destroy-failed-GUID"))
 

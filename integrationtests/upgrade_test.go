@@ -3,6 +3,7 @@ package integrationtests_test
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 	"upgrade-all-services-cli-plugin/internal/fakecapi"
 
@@ -97,7 +98,7 @@ var _ = Describe("upgrade", func() {
 `)))
 
 			Expect(session.Out).To(Say(strings.TrimSpace(`
-\S+: upgraded 15 of 15
+\S+: upgraded 5 of 15
 \S+: ---
 \S+: skipped 0 instances
 \S+: successfully upgraded 5 instances
@@ -164,6 +165,112 @@ var _ = Describe("upgrade", func() {
 				ContainSubstring("fake-instance-24"),
 				ContainSubstring("fake-instance-25"),
 			))
+		})
+	})
+
+	Context("retrying after a failure", func() {
+		const (
+			numSucceedOnFirstAttempt = 89
+			numFailOnFirstAttempts   = 52
+			numOfAttemptsToFail      = 2
+		)
+
+		BeforeEach(func() {
+			capi.AddBroker(
+				fakecapi.ServiceBroker{Name: brokerName},
+				fakecapi.WithServiceOffering(
+					fakecapi.ServiceOffering{Name: "service-offering-1"},
+					fakecapi.WithServicePlan(
+						fakecapi.ServicePlan{Name: "service-plan1", Version: "1.2.3"},
+						fakecapi.WithServiceInstances(repeat(numSucceedOnFirstAttempt, fakecapi.ServiceInstance{UpgradeAvailable: true, Version: "1.2.2", UpdateTime: 10 * time.Millisecond})...),
+						fakecapi.WithServiceInstances(repeat(numFailOnFirstAttempts, fakecapi.ServiceInstance{UpgradeAvailable: true, Version: "1.2.2", UpdateTime: 10 * time.Millisecond, FailTimes: numOfAttemptsToFail})...),
+						fakecapi.WithServiceInstances(repeat(100, fakecapi.ServiceInstance{UpgradeAvailable: false, Version: "1.2.3"})...),
+					),
+				),
+			)
+		})
+
+		It("respects the specified -attempts flag", func() {
+			session := cf("upgrade-all-services", brokerName, "-attempts", "3")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
+
+			By("making the correct number of upgrade requests")
+			Expect(capi.UpdateCount()).To(Equal(numSucceedOnFirstAttempt + (numOfAttemptsToFail+1)*numFailOnFirstAttempts))
+
+			By("logging the correct output for an example service instance")
+			Expect(session.Out).To(Say(`\S+: starting to upgrade instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" \(attempt 1 of 3\)`))
+			Expect(session.Out).To(Say(`\S+: upgrade of instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" failed after \S+ \(attempt 1 of 3\): failed as requested by test setup`))
+			Expect(session.Out).To(Say(`\S+: starting to upgrade instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" \(attempt 2 of 3\)`))
+			Expect(session.Out).To(Say(`\S+: upgrade of instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" failed after \S+ \(attempt 2 of 3\): failed as requested by test setup`))
+			Expect(session.Out).To(Say(`\S+: starting to upgrade instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" \(attempt 3 of 3\)`))
+			Expect(session.Out).To(Say(`\S+: finished upgrade of instance: "fake-instance-96" guid: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae" successfully after \S+ \(attempt 3 of 3\)`))
+			Expect(session.Out).To(Say(strings.TrimSpace(`
+  Details: "failed as requested by test setup"
+  Attempt 1 of 3
+  Service Instance Name: "fake-instance-96"
+  Service Instance GUID: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae"
+  Service Instance Version: "1.2.2"
+  Service Plan Name: "service-plan1"
+  Service Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
+`)))
+			Expect(session.Out).To(Say(strings.TrimSpace(`
+  Details: "failed as requested by test setup"
+  Attempt 2 of 3
+  Service Instance Name: "fake-instance-96"
+  Service Instance GUID: "51a015ab-2a9c-63d4-a2f1-06bd2931ebae"
+  Service Instance Version: "1.2.2"
+  Service Plan Name: "service-plan1"
+  Service Plan GUID: "173a3f22-e23f-27f2-9b32-8efdb64d5c14"
+  Service Plan Version: "1.2.3"
+  Service Offering Name: "service-offering-1"
+  Service Offering GUID: "7fb1c0fc-45b4-fb4d-5aa5-2d2011573daa"
+  Space Name: "fake-space"
+  Space GUID: "5f870ea3-fa54-4174-ab3f-15f2d9516e07"
+  Organization Name: "fake-org"
+  Organization GUID: "1a2f43b5-1594-4247-a888-e8843ebd1b03"
+`)))
+		})
+	})
+
+	Context("waiting between retries", func() {
+		var times []time.Time
+
+		BeforeEach(func() {
+			var lock sync.Mutex
+			cb := func() {
+				lock.Lock()
+				defer lock.Unlock()
+				times = append(times, time.Now())
+			}
+
+			capi.AddBroker(
+				fakecapi.ServiceBroker{Name: brokerName},
+				fakecapi.WithServiceOffering(
+					fakecapi.ServiceOffering{Name: "service-offering-1"},
+					fakecapi.WithServicePlan(
+						fakecapi.ServicePlan{Name: "service-plan1", Version: "1.2.3"},
+						fakecapi.WithServiceInstances(fakecapi.ServiceInstance{UpgradeAvailable: true, Version: "1.2.2", UpdateTime: time.Microsecond, FailTimes: 1, Callback: cb}),
+					),
+				),
+			)
+		})
+
+		It("respects the -retry-interval flag", func() {
+			session := cf("upgrade-all-services", brokerName, "-attempts", "2", "-retry-interval", "100ms")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
+
+			// Ensure that the second attempt is 100ms after the first with an accuracy of 10ms
+			Expect(times).To(HaveLen(2))
+			first := times[0]
+			second := times[1]
+			Expect(second.Sub(first)).To(BeNumerically("~", 100*time.Millisecond, 10*time.Millisecond))
 		})
 	})
 })

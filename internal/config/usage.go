@@ -19,6 +19,8 @@ func UsageOptions() map[string]string {
 		checkDeactivatedPlansFlag: checkDeactivatedPlansDescription,
 		limitFlag:                 limitDescription,
 		jsonOutputFlag:            jsonOutputDescription,
+		attemptsFlag:              attemptsDescription,
+		retryIntervalFlag:         retryIntervalDescription,
 	}
 }
 

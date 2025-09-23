@@ -36,5 +36,7 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) error
 		MinVersion:       cfg.MinVersion,
 		JSONOutput:       cfg.JSONOutput,
 		Limit:            cfg.Limit,
+		Attempts:         cfg.Attempts,
+		RetryInterval:    cfg.RetryInterval,
 	})
 }

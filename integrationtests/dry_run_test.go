@@ -60,7 +60,7 @@ var _ = Describe("-dry-run", func() {
 \S+: upgrade of instance: "service-instance-1" guid: "5cc87b43-f885-3b94-328f-8a5f953590d3" failed after 0s: dry-run prevented upgrade instance guid 5cc87b43-f885-3b94-328f-8a5f953590d3
 \S+: upgrade of instance: "service-instance-3" guid: "ef7fa19f-0d66-55d0-0519-f198164d358c" failed after 0s: dry-run prevented upgrade instance guid ef7fa19f-0d66-55d0-0519-f198164d358c
 \S+: upgrade of instance: "service-instance-5" guid: "ab5b7eb3-4d38-eb33-2aec-dbf7416d1db3" failed after 0s: dry-run prevented upgrade instance guid ab5b7eb3-4d38-eb33-2aec-dbf7416d1db3
-\S+: upgraded 3 of 3
+\S+: upgraded 0 of 3
 \S+: ---
 \S+: skipped 1 instances
 \S+: successfully upgraded 0 instances
