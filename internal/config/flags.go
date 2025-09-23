@@ -43,7 +43,7 @@ const (
 	attemptsDefault     = 1
 	attemptsFlag        = "attempts"
 	attemptsDescription = "maximum number of attempts to perform an upgrade operation, between 1 and 10. Default is 1."
-	attemptsMaximum     = 10 // If someone is having to retry more than 10 times, then they should probably be investigating other avenues
+	attemptsMaximum     = 10
 
 	retryIntervalDefault     = 0
 	retryIntervalFlag        = "retry-interval"
