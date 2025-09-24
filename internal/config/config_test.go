@@ -459,4 +459,48 @@ var _ = Describe("Config", func() {
 			})
 		})
 	})
+
+	Describe("-attempts", func() {
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-attempts", "-1")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`attempts must be greater than 0`))
+			})
+		})
+
+		Context("too high", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-attempts", "42")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`attempts must be less than or equal to 10`))
+			})
+		})
+	})
+
+	Describe("-retry-interval", func() {
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-retry-interval", "-3s")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`retry interval must be greater or equal to 0`))
+			})
+		})
+
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-retry-interval", "1h")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`retry interval must be less than or equal to 10m0s`))
+			})
+		})
+	})
 })

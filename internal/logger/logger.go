@@ -2,16 +2,29 @@ package logger
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sync"
 	"time"
+	"upgrade-all-services-cli-plugin/internal/slicex"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 )
 
+type instanceState int
+
+const (
+	stateUnstarted instanceState = iota
+	stateStarted
+	stateSucceeded
+	stateFailed
+	stateSkipped
+)
+
 func New(period time.Duration) *Logger {
 	l := Logger{
-		ticker:   time.NewTicker(period),
-		failures: []failure{},
+		ticker: time.NewTicker(period),
+		states: make(map[string]instanceState),
 	}
 
 	go func() {
@@ -24,18 +37,17 @@ func New(period time.Duration) *Logger {
 }
 
 type failure struct {
-	instance ccapi.ServiceInstance
-	err      error
+	instance    ccapi.ServiceInstance
+	err         error
+	attempt, of int
 }
 
 type Logger struct {
-	lock      sync.Mutex
-	ticker    *time.Ticker
-	target    int
-	complete  int
-	successes int
-	skipped   int
-	failures  []failure
+	lock     sync.Mutex
+	ticker   *time.Ticker
+	target   int
+	states   map[string]instanceState
+	failures []failure
 }
 
 func (l *Logger) Printf(format string, a ...any) {
@@ -49,36 +61,38 @@ func (l *Logger) SkippingInstance(instance ccapi.ServiceInstance) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.skipped++
+	l.states[instance.GUID] = stateSkipped
 	l.printf("skipping instance: %q guid: %q Upgrade Available: %v Last Operation Type: %q State: %q", instance.Name, instance.GUID, instance.UpgradeAvailable, instance.LastOperationType, instance.LastOperationState)
 }
 
-func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance) {
+func (l *Logger) UpgradeStarting(instance ccapi.ServiceInstance, attempt, of int) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.printf("starting to upgrade instance: %q guid: %q", instance.Name, instance.GUID)
+	l.states[instance.GUID] = stateStarted
+	l.printf("starting to upgrade instance: %q guid: %q%s", instance.Name, instance.GUID, attemptMessage(attempt, of))
 }
 
-func (l *Logger) UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration) {
+func (l *Logger) UpgradeSucceeded(instance ccapi.ServiceInstance, attempt, of int, duration time.Duration) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
-	l.successes++
-	l.complete++
-	l.printf("finished upgrade of instance: %q guid: %q successfully after %s", instance.Name, instance.GUID, duration)
+	l.states[instance.GUID] = stateSucceeded
+	l.printf("finished upgrade of instance: %q guid: %q successfully after %s%s", instance.Name, instance.GUID, duration, attemptMessage(attempt, of))
 }
 
-func (l *Logger) UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error) {
+func (l *Logger) UpgradeFailed(instance ccapi.ServiceInstance, attempt, of int, duration time.Duration, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.failures = append(l.failures, failure{
 		instance: instance,
 		err:      err,
+		attempt:  attempt,
+		of:       of,
 	})
-	l.complete++
-	l.printf("upgrade of instance: %q guid: %q failed after %s: %s", instance.Name, instance.GUID, duration, err)
+	l.states[instance.GUID] = stateFailed
+	l.printf("upgrade of instance: %q guid: %q failed after %s%s: %s", instance.Name, instance.GUID, duration, attemptMessage(attempt, of), err)
 }
 
 func (l *Logger) InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int) {
@@ -100,8 +114,8 @@ func (l *Logger) FinalTotals() {
 
 	l.printf("%s", l.tickerMessage())
 	l.separator()
-	l.printf("skipped %d instances", l.skipped)
-	l.printf("successfully upgraded %d instances", l.successes)
+	l.printf("skipped %d instances", l.numInState(stateSkipped))
+	l.printf("successfully upgraded %d instances", l.numInState(stateSucceeded))
 
 	logRowFormatTotals(l)
 }
@@ -114,11 +128,14 @@ func (l *Logger) HasUpgradeSucceeded() bool {
 
 func logRowFormatTotals(l *Logger) {
 	if len(l.failures) > 0 {
-		l.printf("failed to upgrade %d instances", len(l.failures))
+		l.printf("failed to upgrade %d instances", l.numInState(stateFailed))
 		l.printf("")
 		for _, failure := range l.failures {
 			fmt.Println()
 			fmt.Printf("  Details: %q\n", failure.err)
+			if failure.of != 1 {
+				fmt.Printf("  Attempt %d of %d\n", failure.attempt, failure.of)
+			}
 			fmt.Printf("  Service Instance Name: %q\n", failure.instance.Name)
 			fmt.Printf("  Service Instance GUID: %q\n", failure.instance.GUID)
 			fmt.Printf("  Service Instance Version: %q\n", failure.instance.MaintenanceInfoVersion)
@@ -151,5 +168,16 @@ func (l *Logger) separator() {
 }
 
 func (l *Logger) tickerMessage() string {
-	return fmt.Sprintf("upgraded %d of %d", l.complete, l.target)
+	return fmt.Sprintf("upgraded %d of %d", l.numInState(stateSucceeded), l.target)
+}
+
+func (l *Logger) numInState(s instanceState) int {
+	return len(slicex.Filter(slices.Collect(maps.Values(l.states)), func(state instanceState) bool { return state == s }))
+}
+
+func attemptMessage(attempt, of int) string {
+	if of == 1 {
+		return ""
+	}
+	return fmt.Sprintf(" (attempt %d of %d)", attempt, of)
 }

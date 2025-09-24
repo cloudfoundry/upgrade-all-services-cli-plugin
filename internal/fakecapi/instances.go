@@ -60,6 +60,7 @@ type ServiceInstance struct {
 	UpdateTime               time.Duration `json:"-"`
 	UpdateCount              int           `json:"-"`
 	FailTimes                int           `json:"-"`
+	Callback                 func()        `json:"-"`
 }
 
 type Space struct {
@@ -154,6 +155,10 @@ func (f *FakeCAPI) updateServiceInstanceHandler() func(w http.ResponseWriter, r 
 		if !ok {
 			http.Error(w, fmt.Sprintf("instance with guid %q not found", guid), http.StatusNotFound)
 			return
+		}
+
+		if instance.Callback != nil {
+			instance.Callback()
 		}
 
 		data, err := io.ReadAll(r.Body)

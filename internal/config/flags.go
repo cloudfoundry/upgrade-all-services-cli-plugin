@@ -1,10 +1,13 @@
 package config
 
+import "time"
+
 // This defines the text for all the flags
 const (
 	parallelDefault     = 10
 	parallelFlag        = "parallel"
 	parallelDescription = "number of upgrades to run in parallel"
+	parallelMaximum     = 100
 
 	// Ideally we would have used "-v" as the flag as the CF CLI does,
 	// but unfortunately the CF CLI swallows this flag, and the value
@@ -36,4 +39,14 @@ const (
 	limitDefault     = 0
 	limitFlag        = "limit"
 	limitDescription = "stop after attempting to upgrade the specified number of service instances. 0 means no limit"
+
+	attemptsDefault     = 1
+	attemptsFlag        = "attempts"
+	attemptsDescription = "maximum number of attempts to perform an upgrade operation, between 1 and 10. Default is 1."
+	attemptsMaximum     = 10 // If someone is having to retry more than 10 times, then they should probably be investigating other avenues
+
+	retryIntervalDefault     = 0
+	retryIntervalFlag        = "retry-interval"
+	retryIntervalDescription = "time to wait after a failure before a retry, e.g. '10s', '2m'. Maximum 10m, default 0."
+	retryIntervalMaximum     = 10 * time.Minute
 )

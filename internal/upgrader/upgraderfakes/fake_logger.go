@@ -9,11 +9,6 @@ import (
 )
 
 type FakeLogger struct {
-	DeactivatedPlanStub        func(ccapi.ServiceInstance)
-	deactivatedPlanMutex       sync.RWMutex
-	deactivatedPlanArgsForCall []struct {
-		arg1 ccapi.ServiceInstance
-	}
 	FinalTotalsStub        func()
 	finalTotalsMutex       sync.RWMutex
 	finalTotalsArgsForCall []struct {
@@ -45,58 +40,32 @@ type FakeLogger struct {
 	skippingInstanceArgsForCall []struct {
 		arg1 ccapi.ServiceInstance
 	}
-	UpgradeFailedStub        func(ccapi.ServiceInstance, time.Duration, error)
+	UpgradeFailedStub        func(ccapi.ServiceInstance, int, int, time.Duration, error)
 	upgradeFailedMutex       sync.RWMutex
 	upgradeFailedArgsForCall []struct {
 		arg1 ccapi.ServiceInstance
-		arg2 time.Duration
-		arg3 error
+		arg2 int
+		arg3 int
+		arg4 time.Duration
+		arg5 error
 	}
-	UpgradeStartingStub        func(ccapi.ServiceInstance)
+	UpgradeStartingStub        func(ccapi.ServiceInstance, int, int)
 	upgradeStartingMutex       sync.RWMutex
 	upgradeStartingArgsForCall []struct {
 		arg1 ccapi.ServiceInstance
+		arg2 int
+		arg3 int
 	}
-	UpgradeSucceededStub        func(ccapi.ServiceInstance, time.Duration)
+	UpgradeSucceededStub        func(ccapi.ServiceInstance, int, int, time.Duration)
 	upgradeSucceededMutex       sync.RWMutex
 	upgradeSucceededArgsForCall []struct {
 		arg1 ccapi.ServiceInstance
-		arg2 time.Duration
+		arg2 int
+		arg3 int
+		arg4 time.Duration
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *FakeLogger) DeactivatedPlan(arg1 ccapi.ServiceInstance) {
-	fake.deactivatedPlanMutex.Lock()
-	fake.deactivatedPlanArgsForCall = append(fake.deactivatedPlanArgsForCall, struct {
-		arg1 ccapi.ServiceInstance
-	}{arg1})
-	stub := fake.DeactivatedPlanStub
-	fake.recordInvocation("DeactivatedPlan", []interface{}{arg1})
-	fake.deactivatedPlanMutex.Unlock()
-	if stub != nil {
-		fake.DeactivatedPlanStub(arg1)
-	}
-}
-
-func (fake *FakeLogger) DeactivatedPlanCallCount() int {
-	fake.deactivatedPlanMutex.RLock()
-	defer fake.deactivatedPlanMutex.RUnlock()
-	return len(fake.deactivatedPlanArgsForCall)
-}
-
-func (fake *FakeLogger) DeactivatedPlanCalls(stub func(ccapi.ServiceInstance)) {
-	fake.deactivatedPlanMutex.Lock()
-	defer fake.deactivatedPlanMutex.Unlock()
-	fake.DeactivatedPlanStub = stub
-}
-
-func (fake *FakeLogger) DeactivatedPlanArgsForCall(i int) ccapi.ServiceInstance {
-	fake.deactivatedPlanMutex.RLock()
-	defer fake.deactivatedPlanMutex.RUnlock()
-	argsForCall := fake.deactivatedPlanArgsForCall[i]
-	return argsForCall.arg1
 }
 
 func (fake *FakeLogger) FinalTotals() {
@@ -274,18 +243,20 @@ func (fake *FakeLogger) SkippingInstanceArgsForCall(i int) ccapi.ServiceInstance
 	return argsForCall.arg1
 }
 
-func (fake *FakeLogger) UpgradeFailed(arg1 ccapi.ServiceInstance, arg2 time.Duration, arg3 error) {
+func (fake *FakeLogger) UpgradeFailed(arg1 ccapi.ServiceInstance, arg2 int, arg3 int, arg4 time.Duration, arg5 error) {
 	fake.upgradeFailedMutex.Lock()
 	fake.upgradeFailedArgsForCall = append(fake.upgradeFailedArgsForCall, struct {
 		arg1 ccapi.ServiceInstance
-		arg2 time.Duration
-		arg3 error
-	}{arg1, arg2, arg3})
+		arg2 int
+		arg3 int
+		arg4 time.Duration
+		arg5 error
+	}{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.UpgradeFailedStub
-	fake.recordInvocation("UpgradeFailed", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("UpgradeFailed", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.upgradeFailedMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeFailedStub(arg1, arg2, arg3)
+		fake.UpgradeFailedStub(arg1, arg2, arg3, arg4, arg5)
 	}
 }
 
@@ -295,29 +266,31 @@ func (fake *FakeLogger) UpgradeFailedCallCount() int {
 	return len(fake.upgradeFailedArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeFailedCalls(stub func(ccapi.ServiceInstance, time.Duration, error)) {
+func (fake *FakeLogger) UpgradeFailedCalls(stub func(ccapi.ServiceInstance, int, int, time.Duration, error)) {
 	fake.upgradeFailedMutex.Lock()
 	defer fake.upgradeFailedMutex.Unlock()
 	fake.UpgradeFailedStub = stub
 }
 
-func (fake *FakeLogger) UpgradeFailedArgsForCall(i int) (ccapi.ServiceInstance, time.Duration, error) {
+func (fake *FakeLogger) UpgradeFailedArgsForCall(i int) (ccapi.ServiceInstance, int, int, time.Duration, error) {
 	fake.upgradeFailedMutex.RLock()
 	defer fake.upgradeFailedMutex.RUnlock()
 	argsForCall := fake.upgradeFailedArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
-func (fake *FakeLogger) UpgradeStarting(arg1 ccapi.ServiceInstance) {
+func (fake *FakeLogger) UpgradeStarting(arg1 ccapi.ServiceInstance, arg2 int, arg3 int) {
 	fake.upgradeStartingMutex.Lock()
 	fake.upgradeStartingArgsForCall = append(fake.upgradeStartingArgsForCall, struct {
 		arg1 ccapi.ServiceInstance
-	}{arg1})
+		arg2 int
+		arg3 int
+	}{arg1, arg2, arg3})
 	stub := fake.UpgradeStartingStub
-	fake.recordInvocation("UpgradeStarting", []interface{}{arg1})
+	fake.recordInvocation("UpgradeStarting", []interface{}{arg1, arg2, arg3})
 	fake.upgradeStartingMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeStartingStub(arg1)
+		fake.UpgradeStartingStub(arg1, arg2, arg3)
 	}
 }
 
@@ -327,30 +300,32 @@ func (fake *FakeLogger) UpgradeStartingCallCount() int {
 	return len(fake.upgradeStartingArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeStartingCalls(stub func(ccapi.ServiceInstance)) {
+func (fake *FakeLogger) UpgradeStartingCalls(stub func(ccapi.ServiceInstance, int, int)) {
 	fake.upgradeStartingMutex.Lock()
 	defer fake.upgradeStartingMutex.Unlock()
 	fake.UpgradeStartingStub = stub
 }
 
-func (fake *FakeLogger) UpgradeStartingArgsForCall(i int) ccapi.ServiceInstance {
+func (fake *FakeLogger) UpgradeStartingArgsForCall(i int) (ccapi.ServiceInstance, int, int) {
 	fake.upgradeStartingMutex.RLock()
 	defer fake.upgradeStartingMutex.RUnlock()
 	argsForCall := fake.upgradeStartingArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeLogger) UpgradeSucceeded(arg1 ccapi.ServiceInstance, arg2 time.Duration) {
+func (fake *FakeLogger) UpgradeSucceeded(arg1 ccapi.ServiceInstance, arg2 int, arg3 int, arg4 time.Duration) {
 	fake.upgradeSucceededMutex.Lock()
 	fake.upgradeSucceededArgsForCall = append(fake.upgradeSucceededArgsForCall, struct {
 		arg1 ccapi.ServiceInstance
-		arg2 time.Duration
-	}{arg1, arg2})
+		arg2 int
+		arg3 int
+		arg4 time.Duration
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.UpgradeSucceededStub
-	fake.recordInvocation("UpgradeSucceeded", []interface{}{arg1, arg2})
+	fake.recordInvocation("UpgradeSucceeded", []interface{}{arg1, arg2, arg3, arg4})
 	fake.upgradeSucceededMutex.Unlock()
 	if stub != nil {
-		fake.UpgradeSucceededStub(arg1, arg2)
+		fake.UpgradeSucceededStub(arg1, arg2, arg3, arg4)
 	}
 }
 
@@ -360,24 +335,22 @@ func (fake *FakeLogger) UpgradeSucceededCallCount() int {
 	return len(fake.upgradeSucceededArgsForCall)
 }
 
-func (fake *FakeLogger) UpgradeSucceededCalls(stub func(ccapi.ServiceInstance, time.Duration)) {
+func (fake *FakeLogger) UpgradeSucceededCalls(stub func(ccapi.ServiceInstance, int, int, time.Duration)) {
 	fake.upgradeSucceededMutex.Lock()
 	defer fake.upgradeSucceededMutex.Unlock()
 	fake.UpgradeSucceededStub = stub
 }
 
-func (fake *FakeLogger) UpgradeSucceededArgsForCall(i int) (ccapi.ServiceInstance, time.Duration) {
+func (fake *FakeLogger) UpgradeSucceededArgsForCall(i int) (ccapi.ServiceInstance, int, int, time.Duration) {
 	fake.upgradeSucceededMutex.RLock()
 	defer fake.upgradeSucceededMutex.RUnlock()
 	argsForCall := fake.upgradeSucceededArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeLogger) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.deactivatedPlanMutex.RLock()
-	defer fake.deactivatedPlanMutex.RUnlock()
 	fake.finalTotalsMutex.RLock()
 	defer fake.finalTotalsMutex.RUnlock()
 	fake.hasUpgradeSucceededMutex.RLock()

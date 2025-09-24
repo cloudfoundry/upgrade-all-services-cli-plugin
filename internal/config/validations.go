@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/hashicorp/go-version"
 )
@@ -53,9 +54,9 @@ func validateAPIVersion(conn CLIConnection) error {
 
 // validateParallelUpgrades checks that the parallelisation parameter is within bounds
 func validateParallelUpgrades(p int) error {
-	if p <= 0 || p > 100 {
+	if p <= 0 || p > parallelMaximum {
 		printUsage()
-		return fmt.Errorf("number of parallel upgrades must be in the range of 1 to 100")
+		return fmt.Errorf("number of parallel upgrades must be in the range of 1 to %d", parallelMaximum)
 	}
 	return nil
 }
@@ -100,4 +101,26 @@ func validateLimit(limit int) error {
 		return errors.New("limit must be 0 or greater")
 	}
 	return nil
+}
+
+func validateAttempts(attempts int) error {
+	switch {
+	case attempts <= 0:
+		return errors.New("attempts must be greater than 0")
+	case attempts > attemptsMaximum:
+		return fmt.Errorf("attempts must be less than or equal to %d", attemptsMaximum)
+	default:
+		return nil
+	}
+}
+
+func validateRetryInterval(interval time.Duration) error {
+	switch {
+	case interval >= retryIntervalMaximum:
+		return fmt.Errorf("retry interval must be less than or equal to %s", retryIntervalMaximum)
+	case interval < 0:
+		return errors.New("retry interval must be greater or equal to 0")
+	default:
+		return nil
+	}
 }

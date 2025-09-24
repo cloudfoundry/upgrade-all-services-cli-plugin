@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-version"
 )
@@ -24,6 +25,8 @@ type Config struct {
 	MinVersion        *version.Version
 	ParallelUpgrades  int
 	Limit             int
+	Attempts          int
+	RetryInterval     time.Duration
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -45,6 +48,8 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.StringVar(&minVersionRequired, minVersionRequiredFlag, minVersionRequiredDefault, minVersionRequiredDescription)
 	flagSet.BoolVar(&checkDeactivatedPlans, checkDeactivatedPlansFlag, checkDeactivatedPlansDefault, checkDeactivatedPlansDescription)
 	flagSet.IntVar(&cfg.Limit, limitFlag, limitDefault, limitDescription)
+	flagSet.IntVar(&cfg.Attempts, attemptsFlag, attemptsDefault, attemptsDescription)
+	flagSet.DurationVar(&cfg.RetryInterval, retryIntervalFlag, retryIntervalDefault, retryIntervalDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
@@ -70,6 +75,8 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 		},
 		func() error { return validateJSONFlag(cfg.JSONOutput, cfg.Action) },
 		func() error { return validateLimit(cfg.Limit) },
+		func() error { return validateAttempts(cfg.Attempts) },
+		func() error { return validateRetryInterval(cfg.RetryInterval) },
 	} {
 		if err := s(); err != nil {
 			return Config{}, err

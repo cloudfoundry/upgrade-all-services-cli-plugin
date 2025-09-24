@@ -25,9 +25,9 @@ type CFClient interface {
 type Logger interface {
 	Printf(format string, a ...any)
 	SkippingInstance(instance ccapi.ServiceInstance)
-	UpgradeStarting(instance ccapi.ServiceInstance)
-	UpgradeSucceeded(instance ccapi.ServiceInstance, duration time.Duration)
-	UpgradeFailed(instance ccapi.ServiceInstance, duration time.Duration, err error)
+	UpgradeStarting(instance ccapi.ServiceInstance, attempt, of int)
+	UpgradeSucceeded(instance ccapi.ServiceInstance, attempt, of int, duration time.Duration)
+	UpgradeFailed(instance ccapi.ServiceInstance, attempt, of int, duration time.Duration, err error)
 	InitialTotals(totalServiceInstances, totalUpgradableServiceInstances int)
 	HasUpgradeSucceeded() bool
 	FinalTotals()
@@ -40,6 +40,8 @@ type UpgradeConfig struct {
 	MinVersion       *version.Version
 	JSONOutput       bool
 	Limit            int
+	Attempts         int
+	RetryInterval    time.Duration
 }
 
 func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
@@ -64,11 +66,11 @@ func Upgrade(api CFClient, log Logger, cfg UpgradeConfig) error {
 	case cfg.Action == config.DryRunAction && !cfg.JSONOutput:
 		return outputDryRunText(instances, log, cfg.BrokerName)
 	default:
-		return performUpgrade(api, instances, cfg.ParallelUpgrades, cfg.BrokerName, log)
+		return performUpgrade(api, instances, cfg.ParallelUpgrades, cfg.Attempts, cfg.RetryInterval, cfg.BrokerName, log)
 	}
 }
 
-func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpgrades int, brokerName string, log Logger) error {
+func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpgrades, attempts int, retryInterval time.Duration, brokerName string, log Logger) error {
 	log.Printf("discovering service instances for broker: %s", brokerName)
 	log.InitialTotals(len(instances.all), len(instances.upgradeable))
 	defer log.FinalTotals()
@@ -78,6 +80,10 @@ func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpg
 	if len(instances.upgradeable) == 0 {
 		log.Printf("no instances available to upgrade")
 		return nil
+	}
+	// Must have at least one attempt. Mostly this is here to make simplify writing tests.
+	if attempts < 1 {
+		attempts = 1
 	}
 
 	type upgradeTask struct {
@@ -102,14 +108,22 @@ func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpg
 
 	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
-			start := time.Now()
-			log.UpgradeStarting(instances.upgradeable[instance.UpgradeableIndex])
-			err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
-			switch err {
-			case nil:
-				log.UpgradeSucceeded(instances.upgradeable[instance.UpgradeableIndex], time.Since(start))
-			default:
-				log.UpgradeFailed(instances.upgradeable[instance.UpgradeableIndex], time.Since(start), err)
+			succeeded := false
+			for attempt := 1; attempt <= attempts && !succeeded; attempt++ {
+				start := time.Now()
+				log.UpgradeStarting(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts)
+				err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
+				switch err {
+				case nil:
+					log.UpgradeSucceeded(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts, time.Since(start))
+					succeeded = true
+				default:
+					log.UpgradeFailed(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts, time.Since(start), err)
+				}
+
+				if !succeeded && attempt < attempts {
+					time.Sleep(retryInterval)
+				}
 			}
 		}
 	})
@@ -136,7 +150,7 @@ func outputDryRunText(instances groupedServiceInstances, log Logger, brokerName 
 
 	for _, i := range instances.upgradeable {
 		dryRunErr := fmt.Errorf("dry-run prevented upgrade instance guid %s", i.GUID)
-		log.UpgradeFailed(i, time.Duration(0), dryRunErr)
+		log.UpgradeFailed(i, 1, 1, time.Duration(0), dryRunErr)
 	}
 
 	return nil
