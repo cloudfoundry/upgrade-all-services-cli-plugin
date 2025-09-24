@@ -108,20 +108,22 @@ func performUpgrade(api CFClient, instances groupedServiceInstances, parallelUpg
 
 	workers.Run(parallelUpgrades, func() {
 		for instance := range upgradeQueue {
-		TRY:
-			for attempt := 1; attempt <= attempts; attempt++ {
+			succeeded := false
+			for attempt := 1; attempt <= attempts && !succeeded; attempt++ {
 				start := time.Now()
 				log.UpgradeStarting(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts)
 				err := api.UpgradeServiceInstance(instance.ServiceInstanceGUID, instance.MaintenanceInfoVersion)
 				switch err {
 				case nil:
 					log.UpgradeSucceeded(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts, time.Since(start))
-					break TRY
+					succeeded = true
 				default:
 					log.UpgradeFailed(instances.upgradeable[instance.UpgradeableIndex], attempt, attempts, time.Since(start), err)
 				}
 
-				time.Sleep(retryInterval)
+				if !succeeded && attempt < attempts {
+					time.Sleep(retryInterval)
+				}
 			}
 		}
 	})

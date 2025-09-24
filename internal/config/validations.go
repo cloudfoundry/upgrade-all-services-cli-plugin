@@ -108,7 +108,6 @@ func validateAttempts(attempts int) error {
 	case attempts <= 0:
 		return errors.New("attempts must be greater than 0")
 	case attempts > attemptsMaximum:
-		// If someone is having to retry more than 10 times, then they should probably be investigating other avenues
 		return fmt.Errorf("attempts must be less than or equal to %d", attemptsMaximum)
 	default:
 		return nil
