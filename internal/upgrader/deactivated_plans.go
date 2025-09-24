@@ -2,7 +2,6 @@ package upgrader
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/slicex"
@@ -36,18 +35,20 @@ func outputDeactivatedPlansText(instancesWithDeactivatedPlans []ccapi.ServiceIns
 	fmt.Printf("Number of service instances associated with deactivated plans: %d\n", len(instancesWithDeactivatedPlans))
 	fmt.Println()
 	logServiceInstances(instancesWithDeactivatedPlans)
-	return errors.New("discovered deactivated plans associated with instances")
+	return newInstanceError("discovered deactivated plans associated with instances")
 }
 
-func outputDeactivatedPlansJSON(instances []ccapi.ServiceInstance) error {
-	output, err := json.MarshalIndent(slicex.Map(instances, newJSONOutputServiceInstance), "", "  ")
+func outputDeactivatedPlansJSON(instancesWithDeactivatedPlans []ccapi.ServiceInstance) error {
+	output, err := json.MarshalIndent(slicex.Map(instancesWithDeactivatedPlans, newJSONOutputServiceInstance), "", "  ")
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(string(output))
 
-	// In contrast to text output, we don't exit with an error code. The rationale is that JSON may be piped
-	// to a processor command like `jq`, and a command failure would be more of a hindrance than a help.
+	if len(instancesWithDeactivatedPlans) > 0 {
+		return newInstanceError("discovered deactivated plans associated with instances")
+	}
+
 	return nil
 }

@@ -83,7 +83,7 @@ Number of service instances associated with deactivated plans: 2
 
 	It("shows instances belonging to deactivated plans in JSON", func() {
 		session := cf("upgrade-all-services", brokerName, "-check-deactivated-plans", "-json")
-		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 		Expect(string(session.Out.Contents())).To(MatchJSON(`
   [
     {
@@ -134,5 +134,10 @@ Number of service instances associated with deactivated plans: 2
     }
   ]
 `))
+	})
+
+	It("respects the -ignore-instance-errors flag", func() {
+		session := cf("upgrade-all-services", brokerName, "-check-deactivated-plans", "-ignore-instance-errors")
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 	})
 })

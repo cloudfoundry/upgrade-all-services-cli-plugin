@@ -49,4 +49,8 @@ const (
 	retryIntervalFlag        = "retry-interval"
 	retryIntervalDescription = "time to wait after a failure before a retry, e.g. '10s', '2m'. Maximum 10m, default 0."
 	retryIntervalMaximum     = 10 * time.Minute
+
+	ignoreInstanceErrorsDefault     = false
+	ignoreInstanceErrorsFlag        = "ignore-instance-errors"
+	ignoreInstanceErrorsDescription = "exit with code 0 even when the -min-version-required, -check-deactivated-plans, or -check-up-to-date detect outdated service instances"
 )

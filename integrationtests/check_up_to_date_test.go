@@ -114,7 +114,7 @@ Number of service instances which failed to create: 1
 
 	It("prints deactivated plans, pending upgrades and failed creates in JSON", func() {
 		session := cf("upgrade-all-services", brokerName, "-check-up-to-date", "--json")
-		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 		Expect(strings.TrimSpace(string(session.Out.Contents()))).To(MatchJSON(`
 {
   "plan_deactivated": [
@@ -217,5 +217,10 @@ Number of service instances which failed to create: 1
   ]
 }
 `))
+	})
+
+	It("respects the -ignore-instance-errors flag", func() {
+		session := cf("upgrade-all-services", brokerName, "-check-up-to-date", "-ignore-instance-errors")
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 	})
 })

@@ -111,7 +111,7 @@ No instances found with version lower than "1.2.0"
 	Context("JSON output", func() {
 		It("detects versions below the minimum", func() {
 			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.3", "--json")
-			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 			Expect(session.Out.Contents()).To(MatchJSON(`
 [
     {
@@ -189,7 +189,7 @@ No instances found with version lower than "1.2.0"
 
 		It("ignores versions at or above the minimum", func() {
 			session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.2", "--json")
-			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 			Expect(session.Out.Contents()).To(MatchJSON(`
   [
     {
@@ -246,5 +246,10 @@ No instances found with version lower than "1.2.0"
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 			Expect(string(session.Out.Contents())).To(MatchJSON(`[]`))
 		})
+	})
+
+	It("respects the -ignore-instance-errors flag", func() {
+		session := cf("upgrade-all-services", brokerName, "-min-version-required", "1.2.3", "-ignore-instance-errors")
+		Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 	})
 })

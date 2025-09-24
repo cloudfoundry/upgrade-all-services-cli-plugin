@@ -2,7 +2,6 @@ package upgrader
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/slicex"
@@ -43,7 +42,7 @@ func outputUpToDateText(instancesWithDeactivatedPlans, upgradableInstances, crea
 	logServiceInstances(createFailedInstances)
 
 	if len(instancesWithDeactivatedPlans) > 0 || len(upgradableInstances) > 0 {
-		return errors.New("discovered service instances associated with deactivated plans or with an upgrade available")
+		return newInstanceError("discovered service instances associated with deactivated plans or with an upgrade available")
 	}
 
 	fmt.Println("No instances found associated with deactivated plans or with an upgrade available")
@@ -70,7 +69,9 @@ func outputUpToDateJSON(instancesWithDeactivatedPlans, upgradableInstances, crea
 
 	fmt.Println(string(output))
 
-	// In contrast to text output, we don't exit with an error code. The rationale is that JSON may be piped
-	// to a processor command like `jq`, and a command failure would be more of a hindrance than a help.
+	if len(instancesWithDeactivatedPlans) > 0 || len(upgradableInstances) > 0 {
+		return newInstanceError("discovered service instances associated with deactivated plans or with an upgrade available")
+	}
+
 	return nil
 }

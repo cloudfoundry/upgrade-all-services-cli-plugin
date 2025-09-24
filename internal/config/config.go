@@ -15,18 +15,19 @@ import (
 // error rather than a user error, and you have to cast the `uint` to compare to a `len()`,
 // which just looks more complicated than it has to. So we use an `int` for pragmatic reasons.
 type Config struct {
-	Action            Action
-	BrokerName        string
-	APIToken          string
-	APIEndpoint       string
-	SkipSSLValidation bool
-	HTTPLogging       bool
-	JSONOutput        bool
-	MinVersion        *version.Version
-	ParallelUpgrades  int
-	Limit             int
-	Attempts          int
-	RetryInterval     time.Duration
+	Action               Action
+	BrokerName           string
+	APIToken             string
+	APIEndpoint          string
+	SkipSSLValidation    bool
+	HTTPLogging          bool
+	JSONOutput           bool
+	MinVersion           *version.Version
+	ParallelUpgrades     int
+	Limit                int
+	Attempts             int
+	RetryInterval        time.Duration
+	IgnoreInstanceErrors bool
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -50,6 +51,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.IntVar(&cfg.Limit, limitFlag, limitDefault, limitDescription)
 	flagSet.IntVar(&cfg.Attempts, attemptsFlag, attemptsDefault, attemptsDescription)
 	flagSet.DurationVar(&cfg.RetryInterval, retryIntervalFlag, retryIntervalDefault, retryIntervalDescription)
+	flagSet.BoolVar(&cfg.IgnoreInstanceErrors, ignoreInstanceErrorsFlag, ignoreInstanceErrorsDefault, ignoreInstanceErrorsDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
