@@ -79,14 +79,14 @@ var _ = Describe("UpgradeServiceInstance", func() {
 	var (
 		fakeServer *ghttp.Server
 		req        requester.Requester
-		fakeCCAPI  ccapi.CCAPI
+		cfClient   ccapi.CCAPI
 	)
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		cfClient = ccapi.NewCCAPI(req)
 	})
 
 	When("given an upgradeable instance", func() {
@@ -112,7 +112,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		})
 
 		It("successfully upgrades", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := cfClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).NotTo(HaveOccurred())
 
 			requests := fakeServer.ReceivedRequests()
@@ -141,7 +141,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 			)
 		})
 		It("returns the error", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := cfClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).To(MatchError("upgrade request error: http_error: 500 Internal Server Error response_body: "))
 
 			requests := fakeServer.ReceivedRequests()
@@ -175,7 +175,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 			)
 		})
 		It("returns the error", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := cfClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).To(MatchError("Instance update failed"))
 
 			requests := fakeServer.ReceivedRequests()

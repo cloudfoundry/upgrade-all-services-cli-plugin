@@ -16,14 +16,14 @@ var _ = Describe("GetServiceInstances", func() {
 	var (
 		fakeServer *ghttp.Server
 		req        requester.Requester
-		fakeCCAPI  ccapi.CCAPI
+		cfClient   ccapi.CCAPI
 	)
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		cfClient = ccapi.NewCCAPI(req)
 	})
 
 	When("service instances exist in the given plans", func() {
@@ -68,7 +68,7 @@ var _ = Describe("GetServiceInstances", func() {
 				ServiceOfferingGUID:    "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
 				ServiceOfferingName:    "fake-service-offering-name-3",
 			}
-			actualInstances, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
+			actualInstances, err := cfClient.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
 
 			By("checking the valid service instance is returned")
 			Expect(err).NotTo(HaveOccurred())
@@ -142,7 +142,6 @@ var _ = Describe("GetServiceInstances", func() {
 
 	When("the request fails", func() {
 		BeforeEach(func() {
-
 			fakeServer.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
@@ -152,7 +151,7 @@ var _ = Describe("GetServiceInstances", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
+			_, err := cfClient.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
 
 			Expect(err).To(MatchError("error getting service instances: http response: 500"))
 		})

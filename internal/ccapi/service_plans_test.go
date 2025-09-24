@@ -17,14 +17,14 @@ var _ = Describe("GetServicePlans", func() {
 	var (
 		fakeServer *ghttp.Server
 		req        requester.Requester
-		fakeCCAPI  ccapi.CCAPI
+		cfClient   ccapi.CCAPI
 	)
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		cfClient = ccapi.NewCCAPI(req)
 	})
 
 	When("Given a valid brokername", func() {
@@ -103,7 +103,7 @@ var _ = Describe("GetServicePlans", func() {
 
 		It("returns plans from that broker", func() {
 			By("checking the brokername is in the query")
-			actualPlans, err := fakeCCAPI.GetServicePlans("test-broker-name")
+			actualPlans, err := cfClient.GetServicePlans("test-broker-name")
 
 			Expect(err).NotTo(HaveOccurred())
 
@@ -156,7 +156,7 @@ var _ = Describe("GetServicePlans", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := fakeCCAPI.GetServicePlans("test-broker-name")
+			_, err := cfClient.GetServicePlans("test-broker-name")
 
 			Expect(err).To(MatchError("error getting service plans: http response: 500"))
 		})
