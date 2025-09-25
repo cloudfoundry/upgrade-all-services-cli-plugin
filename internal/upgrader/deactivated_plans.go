@@ -18,24 +18,31 @@ func performDeactivatedPlansCheck(api CFClient, cfg UpgradeConfig) error {
 
 	switch {
 	case cfg.JSONOutput:
-		return outputDeactivatedPlansJSON(instancesWithDeactivatedPlans)
+		if err := outputDeactivatedPlansJSON(instancesWithDeactivatedPlans); err != nil {
+			return err
+		}
 	default:
-		return outputDeactivatedPlansText(instancesWithDeactivatedPlans, cfg.BrokerName, len(instances))
+		outputDeactivatedPlansText(instancesWithDeactivatedPlans, cfg.BrokerName, len(instances))
 	}
+
+	if len(instancesWithDeactivatedPlans) > 0 {
+		return newInstanceError("discovered deactivated plans associated with instances")
+	}
+
+	return nil
 }
 
-func outputDeactivatedPlansText(instancesWithDeactivatedPlans []ccapi.ServiceInstance, brokerName string, totalServiceInstances int) error {
+func outputDeactivatedPlansText(instancesWithDeactivatedPlans []ccapi.ServiceInstance, brokerName string, totalServiceInstances int) {
 	fmt.Printf("Discovering service instances for broker: %s\n", brokerName)
 	fmt.Printf("Total number of service instances: %d\n", totalServiceInstances)
 	if len(instancesWithDeactivatedPlans) == 0 {
 		fmt.Println("No instances found associated with deactivated plans")
-		return nil
+		return
 	}
 
 	fmt.Printf("Number of service instances associated with deactivated plans: %d\n", len(instancesWithDeactivatedPlans))
 	fmt.Println()
 	logServiceInstances(instancesWithDeactivatedPlans)
-	return newInstanceError("discovered deactivated plans associated with instances")
 }
 
 func outputDeactivatedPlansJSON(instancesWithDeactivatedPlans []ccapi.ServiceInstance) error {
@@ -45,10 +52,5 @@ func outputDeactivatedPlansJSON(instancesWithDeactivatedPlans []ccapi.ServiceIns
 	}
 
 	fmt.Println(string(output))
-
-	if len(instancesWithDeactivatedPlans) > 0 {
-		return newInstanceError("discovered deactivated plans associated with instances")
-	}
-
 	return nil
 }
