@@ -78,16 +78,16 @@ var _ = Describe("UpgradeServiceInstance", func() {
 `
 
 	var (
-		fakeServer *ghttp.Server
-		req        requester.Requester
-		fakeCCAPI  ccapi.CCAPI
+		fakeServer  *ghttp.Server
+		req         requester.Requester
+		ccapiClient ccapi.CCAPI
 	)
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req, time.Millisecond)
+		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond)
 	})
 
 	When("given an upgradeable instance", func() {
@@ -113,7 +113,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		})
 
 		It("successfully upgrades", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).NotTo(HaveOccurred())
 
 			requests := fakeServer.ReceivedRequests()
@@ -141,8 +141,9 @@ var _ = Describe("UpgradeServiceInstance", func() {
 				),
 			)
 		})
+
 		It("returns the error", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).To(MatchError("upgrade request error: http_error: 500 Internal Server Error response_body: "))
 
 			requests := fakeServer.ReceivedRequests()
@@ -177,7 +178,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		})
 
 		It("returns the error", func() {
-			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
+			err := ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).To(MatchError("Instance update failed"))
 
 			requests := fakeServer.ReceivedRequests()
@@ -194,4 +195,37 @@ var _ = Describe("UpgradeServiceInstance", func() {
 			Expect(requests[2].URL.Path).To(Equal("/v3/service_instances/test-guid"))
 		})
 	})
+
+	DescribeTable("polling interval",
+		func(interval time.Duration) {
+			fakeServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.VerifyRequest("PATCH", "/v3/service_instances/test-guid"),
+					ghttp.VerifyBody([]byte(`{"maintenance_info":{"version":"test-mi-version"}}`)),
+					ghttp.RespondWith(http.StatusAccepted, ``, nil),
+				),
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.VerifyRequest("GET", "/v3/service_instances/test-guid"),
+					ghttp.RespondWith(http.StatusOK, instanceUpdatingResponse, nil),
+				),
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.VerifyRequest("GET", "/v3/service_instances/test-guid"),
+					ghttp.RespondWith(http.StatusOK, instanceSuccessResponse, nil),
+				),
+			)
+
+			ccapiClient = ccapi.NewCCAPI(req, interval)
+
+			start := time.Now()
+			Expect(ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")).To(Succeed())
+			Expect(time.Now().Sub(start)).To(BeNumerically("~", interval, 10*time.Millisecond), interval.String())
+		},
+		// essentially zero
+		Entry("tiny interval", time.Millisecond),
+		// big enough that we can see a change of behavior from above, but small enough that tests are still snappy
+		Entry("moderate interval", 100*time.Millisecond),
+	)
 })
