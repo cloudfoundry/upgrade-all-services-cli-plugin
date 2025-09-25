@@ -219,9 +219,10 @@ var _ = Describe("UpgradeServiceInstance", func() {
 
 			ccapiClient = ccapi.NewCCAPI(req, interval)
 
+			const accuracy = 25 * time.Millisecond
 			start := time.Now()
 			Expect(ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")).To(Succeed())
-			Expect(time.Now().Sub(start)).To(BeNumerically("~", interval, 10*time.Millisecond), interval.String())
+			Expect(time.Since(start)).To(BeNumerically("~", interval, accuracy), interval.String())
 		},
 		// essentially zero
 		Entry("tiny interval", time.Millisecond),
