@@ -503,4 +503,26 @@ var _ = Describe("Config", func() {
 			})
 		})
 	})
+
+	Describe("-instance-polling-interval", func() {
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-instance-polling-interval", "-3s")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`instance polling interval must be greater or equal to 1ms`))
+			})
+		})
+
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-instance-polling-interval", "1h")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`instance polling interval must be less than or equal to 1m0s`))
+			})
+		})
+	})
 })

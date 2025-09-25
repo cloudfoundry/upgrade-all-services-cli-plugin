@@ -39,7 +39,7 @@ func upgradeAllServices(cliConnection plugin.CliConnection, args []string) int {
 		reqr.Logger = logr
 	}
 
-	err = upgrader.Upgrade(ccapi.NewCCAPI(reqr), logr, upgrader.UpgradeConfig{
+	err = upgrader.Upgrade(ccapi.NewCCAPI(reqr, cfg.InstancePollingInterval), logr, upgrader.UpgradeConfig{
 		BrokerName:       cfg.BrokerName,
 		ParallelUpgrades: cfg.ParallelUpgrades,
 		Action:           cfg.Action,

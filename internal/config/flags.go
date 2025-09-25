@@ -53,4 +53,10 @@ const (
 	ignoreInstanceErrorsDefault     = false
 	ignoreInstanceErrorsFlag        = "ignore-instance-errors"
 	ignoreInstanceErrorsDescription = "exit with code 0 even when the -min-version-required, -check-deactivated-plans, or -check-up-to-date detect outdated service instances"
+
+	instancePollingIntervalDefault     = 10 * time.Second
+	instancePollingIntervalFlag        = "instance-polling-interval"
+	instancePollingIntervalDescription = "polling interval for service instances during the upgrade process. Default is 10s"
+	instancePollingIntervalMinimum     = time.Millisecond
+	instancePollingIntervalMaximum     = time.Minute
 )

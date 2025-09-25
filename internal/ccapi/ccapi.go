@@ -1,13 +1,18 @@
 package ccapi
 
-import "upgrade-all-services-cli-plugin/internal/requester"
+import (
+	"time"
+	"upgrade-all-services-cli-plugin/internal/requester"
+)
 
 type CCAPI struct {
-	requester requester.Requester
+	requester       requester.Requester
+	pollingInterval time.Duration
 }
 
-func NewCCAPI(req requester.Requester) CCAPI {
+func NewCCAPI(req requester.Requester, pollingInterval time.Duration) CCAPI {
 	return CCAPI{
-		requester: req,
+		requester:       req,
+		pollingInterval: pollingInterval,
 	}
 }

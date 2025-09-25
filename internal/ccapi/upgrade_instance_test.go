@@ -2,6 +2,7 @@ package ccapi_test
 
 import (
 	"net/http"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/ccapi"
 	"upgrade-all-services-cli-plugin/internal/requester"
@@ -86,7 +87,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		fakeCCAPI = ccapi.NewCCAPI(req, time.Millisecond)
 	})
 
 	When("given an upgradeable instance", func() {
@@ -174,6 +175,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 				),
 			)
 		})
+
 		It("returns the error", func() {
 			err := fakeCCAPI.UpgradeServiceInstance("test-guid", "test-mi-version")
 			Expect(err).To(MatchError("Instance update failed"))

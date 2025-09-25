@@ -32,7 +32,7 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("upgrades many service instances", func() {
-			session := cf("upgrade-all-services", brokerName)
+			session := cf("upgrade-all-services", brokerName, "--instance-polling-interval", "10ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 			Expect(session.Out).To(Say(strings.TrimSpace(`
 \S+: discovering service instances for broker: upgrade-broker
@@ -55,14 +55,14 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("respects the specified -parallel flag", func() {
-			session := cf("upgrade-all-services", brokerName, "--parallel", "25")
+			session := cf("upgrade-all-services", brokerName, "--parallel", "25", "--instance-polling-interval", "10ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 
 			Expect(capi.MaxConcurrentOperations).To(Equal(25))
 		})
 
 		It("respects the specified -limit flag", func() {
-			session := cf("upgrade-all-services", brokerName, "--limit", "538")
+			session := cf("upgrade-all-services", brokerName, "--limit", "538", "--instance-polling-interval", "1ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
 
 			Expect(capi.UpdateCount()).To(Equal(538))
@@ -86,7 +86,7 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("reports the successes and failures", func() {
-			session := cf("upgrade-all-services", brokerName)
+			session := cf("upgrade-all-services", brokerName, "--instance-polling-interval", "1ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 			Expect(session.Out).To(Say(strings.TrimSpace(`
 \S+: discovering service instances for broker: upgrade-broker
@@ -191,7 +191,7 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("respects the specified -attempts flag", func() {
-			session := cf("upgrade-all-services", brokerName, "-attempts", "3")
+			session := cf("upgrade-all-services", brokerName, "-attempts", "3", "--instance-polling-interval", "1ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 
 			By("making the correct number of upgrade requests")
@@ -263,7 +263,7 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("respects the -retry-interval flag", func() {
-			session := cf("upgrade-all-services", brokerName, "-attempts", "2", "-retry-interval", "100ms")
+			session := cf("upgrade-all-services", brokerName, "-attempts", "2", "-retry-interval", "100ms", "--instance-polling-interval", "10ms")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 
 			// Ensure that the second attempt is 100ms after the first with an accuracy of 10ms

@@ -2,6 +2,7 @@ package ccapi_test
 
 import (
 	"net/http"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/requester"
 
@@ -23,7 +24,7 @@ var _ = Describe("GetServiceInstances", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		fakeCCAPI = ccapi.NewCCAPI(req, time.Millisecond)
 	})
 
 	When("service instances exist in the given plans", func() {

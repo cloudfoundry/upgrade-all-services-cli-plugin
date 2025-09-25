@@ -2,6 +2,7 @@ package ccapi_test
 
 import (
 	"net/http"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/requester"
 
@@ -24,7 +25,7 @@ var _ = Describe("GetServicePlans", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		fakeCCAPI = ccapi.NewCCAPI(req, time.Millisecond)
 	})
 
 	When("Given a valid brokername", func() {
