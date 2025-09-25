@@ -41,7 +41,7 @@ func outputMinimumVersionText(filteredInstances []ccapi.ServiceInstance, totalSe
 	fmt.Printf("Number of service instances with a version lower than %q: %d\n", minVersion, len(filteredInstances))
 	fmt.Println()
 	logServiceInstances(filteredInstances)
-	return fmt.Errorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
+	return newInstanceErrorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
 }
 
 func outputMinimumVersionJSON(filteredInstances []ccapi.ServiceInstance) error {
@@ -54,8 +54,10 @@ func outputMinimumVersionJSON(filteredInstances []ccapi.ServiceInstance) error {
 
 	fmt.Println(string(output))
 
-	// In contrast to text output, we don't exit with an error code. The rationale is that JSON may be piped
-	// to a processor command like `jq`, and a command failure would be more of a hindrance than a help.
+	if len(filteredInstances) > 0 {
+		return newInstanceErrorf("found %d service instances with a version less than the minimum required", len(filteredInstances))
+	}
+
 	return nil
 }
 

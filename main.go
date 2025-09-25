@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"upgrade-all-services-cli-plugin/internal/config"
 
@@ -18,10 +17,8 @@ type UpgradePlugin struct{}
 // It is the entry point for running the plugin.
 func (p *UpgradePlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "upgrade-all-services" {
-		if err := upgradeAllServices(cliConnection, args[1:]); err != nil {
-			fmt.Fprintf(os.Stderr, "upgrade-all-services plugin failed: %s", err.Error())
-			os.Exit(1)
-		}
+		exitCode := upgradeAllServices(cliConnection, args[1:])
+		os.Exit(exitCode)
 	}
 }
 
