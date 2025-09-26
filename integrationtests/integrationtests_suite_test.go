@@ -55,7 +55,6 @@ var _ = SynchronizedBeforeSuite(
 			cmd.Env = append(
 				os.Environ(),
 				fmt.Sprintf("HOME=%s", homePath),
-				fmt.Sprintf("CF_UPGRADE_ALL_PLUGIN_TESTING_POLLING_INTERVAL=%s", 10*time.Millisecond),
 			)
 			session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())

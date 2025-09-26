@@ -2,6 +2,7 @@ package ccapi_test
 
 import (
 	"net/http"
+	"time"
 
 	"upgrade-all-services-cli-plugin/internal/requester"
 
@@ -14,16 +15,16 @@ import (
 
 var _ = Describe("GetServiceInstances", func() {
 	var (
-		fakeServer *ghttp.Server
-		req        requester.Requester
-		fakeCCAPI  ccapi.CCAPI
+		fakeServer  *ghttp.Server
+		req         requester.Requester
+		ccapiClient ccapi.CCAPI
 	)
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		fakeCCAPI = ccapi.NewCCAPI(req)
+		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond)
 	})
 
 	When("service instances exist in the given plans", func() {
@@ -68,7 +69,7 @@ var _ = Describe("GetServiceInstances", func() {
 				ServiceOfferingGUID:    "ebdddfd4-c95a-4e1a-bdd1-4697ffb57fcd",
 				ServiceOfferingName:    "fake-service-offering-name-3",
 			}
-			actualInstances, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
+			actualInstances, err := ccapiClient.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{servicePlanOne, servicePlanTwo, servicePlanThree})
 
 			By("checking the valid service instance is returned")
 			Expect(err).NotTo(HaveOccurred())
@@ -152,7 +153,7 @@ var _ = Describe("GetServiceInstances", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := fakeCCAPI.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
+			_, err := ccapiClient.GetServiceInstancesForServicePlans([]ccapi.ServicePlan{{GUID: "test-guid"}})
 
 			Expect(err).To(MatchError("error getting service instances: http response: 500"))
 		})

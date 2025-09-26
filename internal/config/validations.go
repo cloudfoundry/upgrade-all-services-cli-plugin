@@ -124,3 +124,14 @@ func validateRetryInterval(interval time.Duration) error {
 		return nil
 	}
 }
+
+func validateInstancePollingInterval(interval time.Duration) error {
+	switch {
+	case interval >= instancePollingIntervalMaximum:
+		return fmt.Errorf("instance polling interval must be less than or equal to %s", instancePollingIntervalMaximum)
+	case interval < instancePollingIntervalMinimum:
+		return fmt.Errorf("instance polling interval must be greater or equal to %s", instancePollingIntervalMinimum)
+	default:
+		return nil
+	}
+}
