@@ -19,13 +19,21 @@ func performUpToDateCheck(api CFClient, cfg UpgradeConfig) error {
 
 	switch cfg.JSONOutput {
 	case true:
-		return outputUpToDateJSON(instances.deactivatedPlan, instances.upgradeable, instances.createFailed)
+		if err := outputUpToDateJSON(instances.deactivatedPlan, instances.upgradeable, instances.createFailed); err != nil {
+			return err
+		}
 	default:
-		return outputUpToDateText(instances.deactivatedPlan, instances.upgradeable, instances.createFailed, len(instances.all), cfg.BrokerName)
+		outputUpToDateText(instances.deactivatedPlan, instances.upgradeable, instances.createFailed, len(instances.all), cfg.BrokerName)
 	}
+
+	if len(instances.deactivatedPlan) > 0 || len(instances.upgradeable) > 0 {
+		return newInstanceError("discovered service instances associated with deactivated plans or with an upgrade available")
+	}
+
+	return nil
 }
 
-func outputUpToDateText(instancesWithDeactivatedPlans, upgradableInstances, createFailedInstances []ccapi.ServiceInstance, totalServiceInstances int, brokerName string) error {
+func outputUpToDateText(instancesWithDeactivatedPlans, upgradableInstances, createFailedInstances []ccapi.ServiceInstance, totalServiceInstances int, brokerName string) {
 	fmt.Printf("Discovering service instances for broker: %s\n", brokerName)
 	fmt.Printf("Total number of service instances: %d\n", totalServiceInstances)
 
@@ -41,12 +49,9 @@ func outputUpToDateText(instancesWithDeactivatedPlans, upgradableInstances, crea
 	fmt.Println()
 	logServiceInstances(createFailedInstances)
 
-	if len(instancesWithDeactivatedPlans) > 0 || len(upgradableInstances) > 0 {
-		return newInstanceError("discovered service instances associated with deactivated plans or with an upgrade available")
+	if len(instancesWithDeactivatedPlans) == 0 && len(upgradableInstances) == 0 {
+		fmt.Println("No instances found associated with deactivated plans or with an upgrade available")
 	}
-
-	fmt.Println("No instances found associated with deactivated plans or with an upgrade available")
-	return nil
 }
 
 func outputUpToDateJSON(instancesWithDeactivatedPlans, upgradableInstances, createFailedInstances []ccapi.ServiceInstance) error {
@@ -68,10 +73,5 @@ func outputUpToDateJSON(instancesWithDeactivatedPlans, upgradableInstances, crea
 	}
 
 	fmt.Println(string(output))
-
-	if len(instancesWithDeactivatedPlans) > 0 || len(upgradableInstances) > 0 {
-		return newInstanceError("discovered service instances associated with deactivated plans or with an upgrade available")
-	}
-
 	return nil
 }
