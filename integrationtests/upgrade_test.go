@@ -61,13 +61,6 @@ var _ = Describe("upgrade", func() {
 			Expect(capi.UpdateCount()).To(Equal(1000))
 		})
 
-		It("respects the specified -parallel flag", func() {
-			session := cfFast("upgrade-all-services", brokerName, "--parallel", "25")
-			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
-
-			Expect(capi.MaxConcurrentOperations).To(Equal(25))
-		})
-
 		It("respects the specified -limit flag", func() {
 			session := cfFast("upgrade-all-services", brokerName, "--limit", "538")
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
@@ -175,6 +168,31 @@ var _ = Describe("upgrade", func() {
 		})
 	})
 
+	Context("parallel upgrades", func() {
+		// Instances need to take long enough to update so we hit the parallel upgrade limit
+		const updateTime = 50 * time.Millisecond
+
+		BeforeEach(func() {
+			capi.AddBroker(
+				fakecapi.ServiceBroker{Name: brokerName},
+				fakecapi.WithServiceOffering(
+					fakecapi.ServiceOffering{Name: "service-offering-1"},
+					fakecapi.WithServicePlan(
+						fakecapi.ServicePlan{Name: "service-plan1", Version: "1.2.3"},
+						fakecapi.WithServiceInstances(repeat(50, fakecapi.ServiceInstance{UpgradeAvailable: true, Version: "1.2.2", UpdateTime: updateTime})...),
+					),
+				),
+			)
+		})
+
+		It("runs operations in parallel, respecting the specified -parallel flag", func() {
+			session := cfFast("upgrade-all-services", brokerName, "--parallel", "25")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+
+			Expect(capi.MaxConcurrentOperations).To(Equal(25))
+		})
+	})
+
 	Context("retrying after a failure", func() {
 		const (
 			numSucceedOnFirstAttempt = 89
@@ -270,14 +288,21 @@ var _ = Describe("upgrade", func() {
 		})
 
 		It("respects the -retry-interval flag", func() {
-			session := cfFast("upgrade-all-services", brokerName, "-attempts", "2", "-retry-interval", "100ms")
+			// We want to test with a retry interval that's big enough that it's large compared to overheads,
+			// but small enough that the test still run fast
+			const retryInterval = 200 * time.Millisecond
+			// This needs to be high enough to allow the tests to be reliable, and small enough so that if
+			// the retry interval ever broke, it would still be detected
+			const accuracy = 50 * time.Millisecond
+
+			session := cfFast("upgrade-all-services", brokerName, "-attempts", "2", "-retry-interval", retryInterval.String())
 			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
 
-			// Ensure that the second attempt is 100ms after the first with an accuracy of 10ms
+			// Ensure that the second attempt is the expected time after the first attempt, within allowed error margin
 			Expect(times).To(HaveLen(2))
 			first := times[0]
 			second := times[1]
-			Expect(second.Sub(first)).To(BeNumerically("~", 100*time.Millisecond, 10*time.Millisecond))
+			Expect(second.Sub(first)).To(BeNumerically("~", retryInterval, accuracy))
 		})
 	})
 })
