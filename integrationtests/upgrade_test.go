@@ -170,7 +170,7 @@ var _ = Describe("upgrade", func() {
 
 	Context("parallel upgrades", func() {
 		// Instances need to take long enough to update so we hit the parallel upgrade limit
-		const updateTime = 50 * time.Millisecond
+		const updateTime = 100 * time.Millisecond
 
 		BeforeEach(func() {
 			capi.AddBroker(
