@@ -22,6 +22,7 @@ func UsageOptions() map[string]string {
 		attemptsFlag:                attemptsDescription,
 		retryIntervalFlag:           retryIntervalDescription,
 		instancePollingIntervalFlag: instancePollingIntervalDescription,
+		ignoreInstanceErrorsFlag:    ignoreInstanceErrorsDescription,
 	}
 }
 
