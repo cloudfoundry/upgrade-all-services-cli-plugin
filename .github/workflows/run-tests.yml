@@ -21,7 +21,7 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version: '1.25.3'
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - run: |
         wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo gpg --dearmor -o /usr/share/keyrings/cli.cloudfoundry.org.gpg
         echo "deb [signed-by=/usr/share/keyrings/cli.cloudfoundry.org.gpg] https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
