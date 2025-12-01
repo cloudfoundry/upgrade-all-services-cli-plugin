@@ -12,7 +12,7 @@ import (
 	"upgrade-all-services-cli-plugin/internal/requester"
 	"upgrade-all-services-cli-plugin/internal/upgrader"
 
-	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/v8/plugin"
 )
 
 // The CF CLI doesn't maintain exit codes, so we can't pass on any information with them

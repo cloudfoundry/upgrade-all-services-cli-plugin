@@ -4,7 +4,7 @@ import (
 	"os"
 	"upgrade-all-services-cli-plugin/internal/config"
 
-	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/v8/plugin"
 )
 
 func main() {
