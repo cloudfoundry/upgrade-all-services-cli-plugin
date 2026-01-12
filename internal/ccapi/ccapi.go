@@ -8,11 +8,13 @@ import (
 type CCAPI struct {
 	requester       requester.Requester
 	pollingInterval time.Duration
+	instanceTimeout time.Duration
 }
 
-func NewCCAPI(req requester.Requester, pollingInterval time.Duration) CCAPI {
+func NewCCAPI(req requester.Requester, pollingInterval time.Duration, instanceTimeout time.Duration) CCAPI {
 	return CCAPI{
 		requester:       req,
 		pollingInterval: pollingInterval,
+		instanceTimeout: instanceTimeout,
 	}
 }
