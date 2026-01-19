@@ -25,7 +25,7 @@ var _ = Describe("GetServicePlans", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond)
+		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond, 10*time.Minute)
 	})
 
 	When("Given a valid brokername", func() {
