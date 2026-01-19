@@ -1,14 +1,14 @@
 module upgrade-all-services-cli-plugin
 
-go 1.25.4
+go 1.25.6
 
 require (
 	code.cloudfoundry.org/cli/v8 v8.17.0
 	code.cloudfoundry.org/jsonry v1.1.4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.27.5
+	github.com/onsi/gomega v1.39.0
 )
 
 require (
