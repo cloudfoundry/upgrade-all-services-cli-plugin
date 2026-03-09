@@ -135,3 +135,14 @@ func validateInstancePollingInterval(interval time.Duration) error {
 		return nil
 	}
 }
+
+func validateInstanceTimeout(timeout time.Duration) error {
+	switch {
+	case timeout > instanceTimeoutMaximum:
+		return fmt.Errorf("instance timeout must be less than or equal to %s", instanceTimeoutMaximum)
+	case timeout < instanceTimeoutMinimum:
+		return fmt.Errorf("instance timeout must be greater or equal to %s", instanceTimeoutMinimum)
+	default:
+		return nil
+	}
+}
