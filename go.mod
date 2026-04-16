@@ -3,7 +3,7 @@ module upgrade-all-services-cli-plugin
 go 1.26.2
 
 require (
-	code.cloudfoundry.org/cli/v8 v8.18.2
+	code.cloudfoundry.org/cli/v8 v8.18.3
 	code.cloudfoundry.org/jsonry v1.1.4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/hashicorp/go-version v1.7.0

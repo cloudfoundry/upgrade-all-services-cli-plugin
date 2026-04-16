@@ -1,5 +1,5 @@
-code.cloudfoundry.org/cli/v8 v8.18.2 h1:sjdkQCdYtfi63DiUGFhXrXtm84bg6siq/EHkVFBi9M0=
-code.cloudfoundry.org/cli/v8 v8.18.2/go.mod h1:ya/3zPf67R6Ee0fkdDEQMSg81hSdkw0aObfsVazip4A=
+code.cloudfoundry.org/cli/v8 v8.18.3 h1:Wn+OQCaI/TFsqwnX3thlIMyJTU18qKRQHPNFwt2NA9c=
+code.cloudfoundry.org/cli/v8 v8.18.3/go.mod h1:ya/3zPf67R6Ee0fkdDEQMSg81hSdkw0aObfsVazip4A=
 code.cloudfoundry.org/jsonry v1.1.4 h1:P9N7IlH1/4aRCLcXLgLFj1hkcBmV7muijJzY+K6U4hE=
 code.cloudfoundry.org/jsonry v1.1.4/go.mod h1:6aKilShQP7w/Ez76h1El2/n9y2OkHuU56nKSBB9Gp0A=
 github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
