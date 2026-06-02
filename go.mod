@@ -1,6 +1,6 @@
 module upgrade-all-services-cli-plugin
 
-go 1.26.3
+go 1.26.4
 
 require (
 	code.cloudfoundry.org/cli/v8 v8.18.3
