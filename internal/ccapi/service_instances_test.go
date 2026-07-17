@@ -24,7 +24,7 @@ var _ = Describe("GetServiceInstances", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond)
+		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond, 10*time.Minute)
 	})
 
 	When("service instances exist in the given plans", func() {
