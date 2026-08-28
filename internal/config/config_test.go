@@ -3,6 +3,7 @@ package config_test
 import (
 	"fmt"
 	"strings"
+	"time"
 	"upgrade-all-services-cli-plugin/internal/config"
 	"upgrade-all-services-cli-plugin/internal/config/configfakes"
 
@@ -522,6 +523,46 @@ var _ = Describe("Config", func() {
 
 			It("returns an error", func() {
 				Expect(cfgErr).To(MatchError(`instance polling interval must be less than or equal to 1m0s`))
+			})
+		})
+	})
+
+	Describe("-instance-timeout", func() {
+		Context("default value", func() {
+			It("is set to 10 minutes", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.InstanceTimeout).To(Equal(10 * time.Minute))
+			})
+		})
+
+		Context("custom value", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-instance-timeout", "5m")
+			})
+
+			It("uses the custom value", func() {
+				Expect(cfgErr).NotTo(HaveOccurred())
+				Expect(cfg.InstanceTimeout).To(Equal(5 * time.Minute))
+			})
+		})
+
+		Context("too low", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-instance-timeout", "500ms")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`instance timeout must be greater or equal to 1s`))
+			})
+		})
+
+		Context("too high", func() {
+			BeforeEach(func() {
+				fakeArgs = append(fakeArgs, "-instance-timeout", "25h")
+			})
+
+			It("returns an error", func() {
+				Expect(cfgErr).To(MatchError(`instance timeout must be less than or equal to 24h0m0s`))
 			})
 		})
 	})

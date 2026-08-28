@@ -87,7 +87,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		fakeServer = ghttp.NewServer()
 		DeferCleanup(fakeServer.Close)
 		req = requester.NewRequester(fakeServer.URL(), "fake-token", false)
-		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond)
+		ccapiClient = ccapi.NewCCAPI(req, time.Millisecond, 10*time.Minute)
 	})
 
 	When("given an upgradeable instance", func() {
@@ -217,7 +217,7 @@ var _ = Describe("UpgradeServiceInstance", func() {
 				),
 			)
 
-			ccapiClient = ccapi.NewCCAPI(req, interval)
+			ccapiClient = ccapi.NewCCAPI(req, interval, 10*time.Minute)
 
 			const accuracy = 25 * time.Millisecond
 			start := time.Now()
@@ -229,4 +229,67 @@ var _ = Describe("UpgradeServiceInstance", func() {
 		// big enough that we can see a change of behavior from above, but small enough that tests are still snappy
 		Entry("moderate interval", 100*time.Millisecond),
 	)
+
+	When("the upgrade times out", func() {
+		BeforeEach(func() {
+			fakeServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.VerifyRequest("PATCH", "/v3/service_instances/test-guid"),
+					ghttp.VerifyBody([]byte(`{"maintenance_info":{"version":"test-mi-version"}}`)),
+					ghttp.RespondWith(http.StatusAccepted, ``, nil),
+				),
+			)
+			// Keep returning "in progress" indefinitely
+			fakeServer.RouteToHandler("GET", "/v3/service_instances/test-guid",
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.RespondWith(http.StatusOK, instanceUpdatingResponse, nil),
+				),
+			)
+		})
+
+		It("returns a timeout error", func() {
+			// Use a very short timeout for the test
+			const timeout = 10 * time.Millisecond
+			ccapiClient = ccapi.NewCCAPI(req, time.Millisecond, timeout)
+
+			err := ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")
+			Expect(err).To(MatchError("error upgrade request timeout"))
+		})
+	})
+
+	When("a custom timeout is configured", func() {
+		BeforeEach(func() {
+			fakeServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.VerifyRequest("PATCH", "/v3/service_instances/test-guid"),
+					ghttp.VerifyBody([]byte(`{"maintenance_info":{"version":"test-mi-version"}}`)),
+					ghttp.RespondWith(http.StatusAccepted, ``, nil),
+				),
+			)
+			// Keep returning "in progress" indefinitely
+			fakeServer.RouteToHandler("GET", "/v3/service_instances/test-guid",
+				ghttp.CombineHandlers(
+					ghttp.VerifyHeaderKV("Authorization", "fake-token"),
+					ghttp.RespondWith(http.StatusOK, instanceUpdatingResponse, nil),
+				),
+			)
+		})
+
+		It("respects the configured timeout", func() {
+			// Use a custom timeout
+			const customTimeout = 50 * time.Millisecond
+			ccapiClient = ccapi.NewCCAPI(req, time.Millisecond, customTimeout)
+
+			const accuracy = 25 * time.Millisecond
+			start := time.Now()
+			err := ccapiClient.UpgradeServiceInstance("test-guid", "test-mi-version")
+			duration := time.Since(start)
+
+			Expect(err).To(MatchError("error upgrade request timeout"))
+			Expect(duration).To(BeNumerically("~", customTimeout, accuracy))
+		})
+	})
 })
