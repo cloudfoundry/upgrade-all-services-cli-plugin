@@ -59,4 +59,10 @@ const (
 	instancePollingIntervalDescription = "polling interval for service instances during the upgrade process. Default is 10s"
 	instancePollingIntervalMinimum     = time.Millisecond
 	instancePollingIntervalMaximum     = time.Minute
+
+	instanceTimeoutDefault     = 10 * time.Minute
+	instanceTimeoutFlag        = "instance-timeout"
+	instanceTimeoutDescription = "timeout for service instance upgrade operations. Default is 10m"
+	instanceTimeoutMinimum     = time.Second
+	instanceTimeoutMaximum     = 24 * time.Hour
 )

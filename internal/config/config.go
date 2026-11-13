@@ -29,6 +29,7 @@ type Config struct {
 	RetryInterval           time.Duration
 	IgnoreInstanceErrors    bool
 	InstancePollingInterval time.Duration
+	InstanceTimeout         time.Duration
 }
 
 // ParseConfig combines and validates data from the command line and CLIConnection object
@@ -54,6 +55,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 	flagSet.DurationVar(&cfg.RetryInterval, retryIntervalFlag, retryIntervalDefault, retryIntervalDescription)
 	flagSet.BoolVar(&cfg.IgnoreInstanceErrors, ignoreInstanceErrorsFlag, ignoreInstanceErrorsDefault, ignoreInstanceErrorsDescription)
 	flagSet.DurationVar(&cfg.InstancePollingInterval, instancePollingIntervalFlag, instancePollingIntervalDefault, instancePollingIntervalDescription)
+	flagSet.DurationVar(&cfg.InstanceTimeout, instanceTimeoutFlag, instanceTimeoutDefault, instanceTimeoutDescription)
 
 	// This ranges over a chain of functions, each of which performs a single action and may return an error.
 	// The chain breaks at the first error received. It arguably reads better than repetitive error handling logic.
@@ -82,6 +84,7 @@ func ParseConfig(conn CLIConnection, args []string) (Config, error) {
 		func() error { return validateAttempts(cfg.Attempts) },
 		func() error { return validateRetryInterval(cfg.RetryInterval) },
 		func() error { return validateInstancePollingInterval(cfg.InstancePollingInterval) },
+		func() error { return validateInstanceTimeout(cfg.InstanceTimeout) },
 	} {
 		if err := s(); err != nil {
 			return Config{}, err

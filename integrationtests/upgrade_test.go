@@ -305,4 +305,36 @@ var _ = Describe("upgrade", func() {
 			Expect(second.Sub(first)).To(BeNumerically("~", retryInterval, accuracy))
 		})
 	})
+
+	Context("instance timeout", func() {
+		BeforeEach(func() {
+			capi.AddBroker(
+				fakecapi.ServiceBroker{Name: brokerName},
+				fakecapi.WithServiceOffering(
+					fakecapi.ServiceOffering{Name: "service-offering-1"},
+					fakecapi.WithServicePlan(
+						fakecapi.ServicePlan{Name: "service-plan1", Version: "1.2.3"},
+						// Instance takes 5 seconds to update, which will exceed our short timeout
+						fakecapi.WithServiceInstances(fakecapi.ServiceInstance{UpgradeAvailable: true, Version: "1.2.2", UpdateTime: 5 * time.Second}),
+					),
+				),
+			)
+		})
+
+		It("respects the -instance-timeout flag", func() {
+			// Use a short timeout (1 second) that will be exceeded by the 5 second update time
+			session := cf("upgrade-all-services", brokerName, "--instance-polling-interval", "100ms", "--instance-timeout", "1s")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(1))
+
+			Expect(session.Out).To(Say("error upgrade request timeout"))
+		})
+
+		It("succeeds when timeout is long enough", func() {
+			// Use a timeout longer than the update time
+			session := cf("upgrade-all-services", brokerName, "--instance-polling-interval", "100ms", "--instance-timeout", "10s")
+			Eventually(session).WithTimeout(time.Minute).Should(Exit(0))
+
+			Expect(session.Out).To(Say("successfully upgraded 1 instances"))
+		})
+	})
 })

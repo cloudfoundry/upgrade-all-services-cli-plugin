@@ -17,7 +17,7 @@ func (c CCAPI) UpgradeServiceInstance(guid, miVersion string) error {
 		return fmt.Errorf("upgrade request error: %s", err)
 	}
 
-	for timeout := time.After(time.Minute * 10); ; {
+	for timeout := time.After(c.instanceTimeout); ; {
 		select {
 		case <-timeout:
 			return fmt.Errorf("error upgrade request timeout")
